@@ -5,14 +5,14 @@ import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerChannelTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
-    "create_channel",
-    "Create a new channel",
+    "channel_create",
+    "Create a new channel on the server",
     {
       name: z.string().describe("Channel name"),
       parent_id: z.number().optional().describe("Parent channel ID"),
       permanent: z.boolean().default(false).describe("Permanent or temporary channel"),
     },
-    handleToolError("create_channel", async ({ name, parent_id, permanent }) => {
+    handleToolError("channel_create", async ({ name, parent_id, permanent }) => {
       const ts = await conn.getClient();
       const channel = await ts.channelCreate(name, {
         cpid: parent_id !== undefined ? String(parent_id) : undefined,
@@ -23,13 +23,13 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
   );
 
   server.tool(
-    "delete_channel",
-    "Delete a channel",
+    "channel_delete",
+    "Delete a channel from the server",
     {
       channel_id: z.number().describe("Channel ID to delete"),
       force: z.boolean().default(false).describe("Force deletion even if clients are present"),
     },
-    handleToolError("delete_channel", async ({ channel_id, force }) => {
+    handleToolError("channel_delete", async ({ channel_id, force }) => {
       const ts = await conn.getClient();
       await ts.channelDelete(String(channel_id), force);
       return toolResponse({ status: "ok", channel_id });
@@ -37,8 +37,8 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
   );
 
   server.tool(
-    "update_channel",
-    "Update channel properties. For talk power presets: 0=normal (everyone talks), 50=moderated, 999=silent",
+    "channel_update",
+    "Update channel properties. Talk power presets: 0=normal, 50=moderated, 999=silent",
     {
       channel_id: z.number().describe("Channel ID to update"),
       name: z.string().optional().describe("New channel name"),
@@ -49,7 +49,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       codec_quality: z.number().optional().describe("Audio codec quality 1-10"),
       permanent: z.boolean().optional().describe("Make channel permanent"),
     },
-    handleToolError("update_channel", async ({ channel_id, name, description, password, max_clients, talk_power, codec_quality, permanent }) => {
+    handleToolError("channel_update", async ({ channel_id, name, description, password, max_clients, talk_power, codec_quality, permanent }) => {
       const ts = await conn.getClient();
       const props: Record<string, string | number | boolean> = {};
       if (name !== undefined) props.channelName = name;
@@ -69,7 +69,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
     "channel_info",
     "Get detailed information about a specific channel",
     {
-      channel_id: z.number().describe("Channel ID to get info for"),
+      channel_id: z.number().describe("Channel ID"),
     },
     handleToolError("channel_info", async ({ channel_id }) => {
       const ts = await conn.getClient();
@@ -90,30 +90,26 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
   );
 
   server.tool(
-    "manage_channel_permissions",
-    "Add or remove specific permissions for a channel",
+    "channel_perm",
+    "Manage permissions on a specific channel: add, remove, or list",
     {
-      channel_id: z.number().describe("Channel ID to modify permissions for"),
+      channel_id: z.number().describe("Channel ID"),
       action: z.enum(["add", "remove", "list"]).describe("Action to perform"),
       permission: z.string().optional().describe("Permission name (required for add/remove)"),
       value: z.number().optional().describe("Permission value (required for add)"),
     },
-    handleToolError("manage_channel_permissions", async ({ channel_id, action, permission, value }) => {
+    handleToolError("channel_perm", async ({ channel_id, action, permission, value }) => {
       const ts = await conn.getClient();
       const cid = String(channel_id);
 
       if (action === "add") {
-        if (!permission || value === undefined) {
-          throw new Error("Permission name and value required for add action");
-        }
+        if (!permission || value === undefined) throw new Error("Permission name and value required for add action");
         await ts.channelSetPerm(cid, { permname: permission, permvalue: value });
         return toolResponse({ status: "ok", channel_id, permission, value });
       }
 
       if (action === "remove") {
-        if (!permission) {
-          throw new Error("Permission name required for remove action");
-        }
+        if (!permission) throw new Error("Permission name required for remove action");
         await ts.channelDelPerm(cid, permission);
         return toolResponse({ status: "ok", channel_id, permission });
       }

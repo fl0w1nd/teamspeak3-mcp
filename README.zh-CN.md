@@ -20,7 +20,7 @@
 
 ## 特性
 
-- **31 个精心设计的工具** — 覆盖服务器管理、频道、客户端、权限、审核等
+- **34 个精心设计的工具** — 覆盖服务器管理、频道、客户端、组、权限、审核等
 - **延迟连接** — 仅在首次调用工具时才连接 TeamSpeak
 - **指数退避重试** — 自动重连，最多尝试 3 次
 - **优雅关闭** — 进程退出时自动清理 ServerQuery 会话
@@ -105,86 +105,89 @@
 
 ## 工具一览
 
-### 核心
+### 服务器 (`server_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `server_info` | 获取服务器名称、版本、平台、在线人数、运行时间等 |
-| `list_clients` | 列出所有在线客户端及其 ID、昵称和所在频道 |
-| `list_channels` | 列出服务器上的所有频道 |
+| `server_info` | 获取服务器信息（scope: `overview` 概览 / `connection` 网络统计） |
+| `server_list` | 列出资源（resource: `clients`, `channels`, `server_groups`, `channel_groups`） |
+| `server_search` | 按模式搜索客户端或频道 |
+| `server_log` | 查看虚拟服务器或实例的最近日志 |
+| `server_diagnose` | 诊断当前连接的权限状态 |
 
-### 消息
-
-| 工具 | 描述 |
-|---|---|
-| `send_channel_message` | 向频道发送文字消息 |
-| `send_private_message` | 向指定客户端发送私信 |
-| `poke_client` | 向客户端发送戳一戳提醒 |
-
-### 频道管理
+### 频道 (`channel_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `create_channel` | 创建新频道（永久或临时） |
-| `delete_channel` | 删除频道（可强制删除） |
-| `update_channel` | 更新频道属性（名称、密码、编解码器、语音权限等） |
+| `channel_create` | 创建新频道（永久或临时） |
+| `channel_delete` | 删除频道（可强制删除） |
+| `channel_update` | 更新频道属性（名称、密码、编解码器、语音权限等） |
 | `channel_info` | 获取频道详细信息 |
-| `manage_channel_permissions` | 添加、删除或列出频道权限 |
+| `channel_perm` | 添加、删除或列出频道权限 |
 
-### 客户端管理
-
-| 工具 | 描述 |
-|---|---|
-| `move_client` | 将客户端移动到另一个频道 |
-| `kick_client` | 将客户端踢出服务器或频道 |
-| `ban_client` | 封禁客户端（限时或永久） |
-| `client_info_detailed` | 获取客户端详细信息：平台、版本、国家、IP、空闲时间等 |
-| `manage_user_permissions` | 管理用户的服务器组和个人权限 |
-| `diagnose_permissions` | 诊断当前连接的权限状态 |
-
-### 服务器组
+### 客户端 (`client_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `list_server_groups` | 列出所有服务器组 |
-| `create_server_group` | 创建新的服务器组 |
-| `manage_server_group_permissions` | 添加、删除或列出服务器组权限 |
+| `client_info` | 获取客户端详细信息：平台、版本、国家、IP、空闲时间等 |
+| `client_move` | 将客户端移动到另一个频道 |
+| `client_kick` | 将客户端踢出服务器或频道 |
+| `client_ban` | 封禁客户端（限时或永久） |
+| `client_perm` | 管理服务器组成员资格和个人权限 |
+| `client_poke` | 向客户端发送戳一戳提醒 |
 
-### 审核
-
-| 工具 | 描述 |
-|---|---|
-| `list_bans` | 列出所有生效的封禁规则 |
-| `manage_ban_rules` | 按 IP/名称/UID 创建、删除或清除封禁规则 |
-| `list_complaints` | 列出投诉记录（可按目标客户端筛选） |
-
-### 搜索
+### 服务器组 (`sgroup_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `search_clients` | 按名称或唯一标识符搜索客户端 |
-| `find_channels` | 按名称模式搜索频道 |
+| `sgroup_create` | 创建新的服务器组 |
+| `sgroup_delete` | 删除服务器组 |
+| `sgroup_perm` | 添加、删除或列出服务器组权限 |
+| `sgroup_clients` | 列出服务器组中的所有成员 |
 
-### 权限令牌
-
-| 工具 | 描述 |
-|---|---|
-| `list_privilege_tokens` | 列出所有可用的权限令牌 |
-| `create_privilege_token` | 创建服务器组或频道组令牌 |
-
-### 文件浏览
+### 频道组 (`cgroup_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `list_files` | 列出频道文件仓库中的文件 |
-| `get_file_info` | 获取指定文件的详细信息 |
+| `cgroup_create` | 创建新的频道组 |
+| `cgroup_perm` | 添加、删除或列出频道组权限 |
+| `cgroup_assign` | 将客户端分配到指定频道的频道组 |
 
-### 日志与诊断
+### 权限 (`perm_*`)
 
 | 工具 | 描述 |
 |---|---|
-| `view_server_logs` | 查看虚拟服务器或实例的最近日志 |
-| `get_connection_info` | 获取服务器连接统计信息 |
+| `perm_list` | 列出所有可用权限定义（名称、ID、描述） |
+| `perm_find` | 查找某个权限在服务器中的所有分配情况 |
+| `perm_overview` | 获取客户端在指定频道的有效权限总览 |
+
+### 消息 (`msg_*`)
+
+| 工具 | 描述 |
+|---|---|
+| `msg_send` | 发送文字消息（mode: `channel` 频道 / `private` 私聊） |
+
+### 审核 (`ban_*` / `complaint_*`)
+
+| 工具 | 描述 |
+|---|---|
+| `ban_list` | 列出所有生效的封禁规则 |
+| `ban_manage` | 按 IP/名称/UID 创建、删除或清除封禁规则 |
+| `complaint_list` | 列出投诉记录（可按目标客户端筛选） |
+
+### 令牌 (`token_*`)
+
+| 工具 | 描述 |
+|---|---|
+| `token_list` | 列出所有可用的权限令牌 |
+| `token_create` | 创建服务器组或频道组令牌 |
+
+### 文件 (`file_*`)
+
+| 工具 | 描述 |
+|---|---|
+| `file_list` | 列出频道文件仓库中的文件 |
+| `file_info` | 获取指定文件的详细信息 |
 
 ## 开发
 
@@ -212,23 +215,23 @@ pnpm inspect
 
 ```
 src/
-├── index.ts           # 入口文件、stdio 传输、优雅关闭
-├── config.ts          # 命令行 + 环境变量配置解析
-├── connection.ts      # TeamSpeak 连接（重试 + 延迟初始化）
-├── server.ts          # MCP 服务器创建与工具注册
+├── index.ts             # 入口文件、stdio 传输、优雅关闭
+├── config.ts            # 命令行 + 环境变量配置解析
+├── connection.ts        # TeamSpeak 连接（重试 + 延迟初始化）
+├── server.ts            # MCP 服务器创建与工具注册
 ├── utils/
 │   └── tool-handler.ts  # 错误处理与响应工具函数
 └── tools/
-    ├── core.ts        # 服务器信息、客户端/频道列表
-    ├── messaging.ts   # 频道/私人消息、戳一戳
-    ├── channel.ts     # 频道增删改查 & 权限
-    ├── client.ts      # 客户端管理 & 权限
-    ├── server-group.ts # 服务器组管理
-    ├── moderation.ts  # 封禁 & 投诉
-    ├── search.ts      # 客户端/频道搜索
-    ├── token.ts       # 权限令牌管理
-    ├── file.ts        # 文件浏览
-    └── logging.ts     # 服务器日志 & 连接信息
+    ├── server.ts        # 服务器信息、资源列表、搜索、日志、诊断
+    ├── channel.ts       # 频道增删改查 & 权限
+    ├── client.ts        # 客户端管理、权限 & 戳一戳
+    ├── server-group.ts  # 服务器组增删、权限 & 成员
+    ├── channel-group.ts # 频道组增删、权限 & 分配
+    ├── permission.ts    # 全局权限查询与概览
+    ├── messaging.ts     # 频道 & 私聊消息
+    ├── moderation.ts    # 封禁 & 投诉
+    ├── token.ts         # 权限令牌管理
+    └── file.ts          # 频道文件浏览
 ```
 
 ## 许可证

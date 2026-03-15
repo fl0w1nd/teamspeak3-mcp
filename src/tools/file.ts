@@ -5,14 +5,14 @@ import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerFileTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
-    "list_files",
+    "file_list",
     "List files in a channel's file repository",
     {
-      channel_id: z.number().describe("Channel ID to list files for"),
+      channel_id: z.number().describe("Channel ID"),
       path: z.string().default("/").describe("Directory path to list"),
       channel_password: z.string().optional().describe("Channel password if required"),
     },
-    handleToolError("list_files", async ({ channel_id, path, channel_password }) => {
+    handleToolError("file_list", async ({ channel_id, path, channel_password }) => {
       const ts = await conn.getClient();
       const files = await ts.ftGetFileList(String(channel_id), path, channel_password);
       const data = files.map((f) => ({
@@ -25,14 +25,14 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
   );
 
   server.tool(
-    "get_file_info",
-    "Get detailed information about a specific file in a channel",
+    "file_info",
+    "Get detailed information about a specific file in a channel's file repository",
     {
       channel_id: z.number().describe("Channel ID containing the file"),
       file_path: z.string().describe("Full path to the file"),
       channel_password: z.string().optional().describe("Channel password if required"),
     },
-    handleToolError("get_file_info", async ({ channel_id, file_path, channel_password }) => {
+    handleToolError("file_info", async ({ channel_id, file_path, channel_password }) => {
       const ts = await conn.getClient();
       const info = await ts.ftGetFileInfo(String(channel_id), file_path, channel_password);
       return toolResponse({

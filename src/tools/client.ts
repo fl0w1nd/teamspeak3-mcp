@@ -6,57 +6,12 @@ import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerClientTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
-    "move_client",
-    "Move a client to another channel",
+    "client_info",
+    "Get detailed information about a specific online client",
     {
       client_id: z.number().describe("Client ID"),
-      channel_id: z.number().describe("Destination channel ID"),
     },
-    handleToolError("move_client", async ({ client_id, channel_id }) => {
-      const ts = await conn.getClient();
-      await ts.clientMove(String(client_id), String(channel_id));
-      return toolResponse({ status: "ok", client_id, channel_id });
-    })
-  );
-
-  server.tool(
-    "kick_client",
-    "Kick a client from server or channel",
-    {
-      client_id: z.number().describe("Client ID"),
-      reason: z.string().default("Expelled by AI").describe("Kick reason"),
-      from_server: z.boolean().default(false).describe("Kick from server (true) or channel (false)"),
-    },
-    handleToolError("kick_client", async ({ client_id, reason, from_server }) => {
-      const ts = await conn.getClient();
-      const reasonId = from_server ? ReasonIdentifier.KICK_SERVER : ReasonIdentifier.KICK_CHANNEL;
-      await ts.clientKick(String(client_id), reasonId, reason);
-      return toolResponse({ status: "ok", client_id, from: from_server ? "server" : "channel", reason });
-    })
-  );
-
-  server.tool(
-    "ban_client",
-    "Ban a client from the server",
-    {
-      client_id: z.number().describe("Client ID"),
-      reason: z.string().default("Banned by AI").describe("Ban reason"),
-      duration: z.number().default(0).describe("Ban duration in seconds (0 = permanent)"),
-    },
-    handleToolError("ban_client", async ({ client_id, reason, duration }) => {
-      const ts = await conn.getClient();
-      await ts.banClient({ clid: String(client_id), time: duration, banreason: reason });
-      return toolResponse({ status: "ok", client_id, duration, permanent: duration === 0, reason });
-    })
-  );
-
-  server.tool(
-    "client_info_detailed",
-    "Get detailed information about a specific client",
-    {
-      client_id: z.number().describe("Client ID to get detailed info for"),
-    },
-    handleToolError("client_info_detailed", async ({ client_id }) => {
+    handleToolError("client_info", async ({ client_id }) => {
       const ts = await conn.getClient();
       const infos = await ts.clientInfo([String(client_id)]);
       const info = infos[0];
@@ -84,36 +39,81 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
   );
 
   server.tool(
-    "manage_user_permissions",
-    "Manage user permissions: add/remove server groups, set individual permissions",
+    "client_move",
+    "Move a client to another channel",
     {
-      client_id: z.number().describe("Client ID to manage permissions for"),
-      action: z.enum(["add_group", "remove_group", "list_groups", "add_permission", "remove_permission", "list_permissions"]).describe("Action to perform"),
-      group_id: z.number().optional().describe("Server group ID (for add_group/remove_group)"),
-      permission: z.string().optional().describe("Permission name (for add_permission/remove_permission)"),
-      value: z.number().optional().describe("Permission value (for add_permission)"),
+      client_id: z.number().describe("Client ID"),
+      channel_id: z.number().describe("Destination channel ID"),
+    },
+    handleToolError("client_move", async ({ client_id, channel_id }) => {
+      const ts = await conn.getClient();
+      await ts.clientMove(String(client_id), String(channel_id));
+      return toolResponse({ status: "ok", client_id, channel_id });
+    })
+  );
+
+  server.tool(
+    "client_kick",
+    "Kick a client from the server or current channel",
+    {
+      client_id: z.number().describe("Client ID"),
+      reason: z.string().default("Kicked by AI").describe("Kick reason"),
+      from_server: z.boolean().default(false).describe("true = kick from server, false = kick from channel"),
+    },
+    handleToolError("client_kick", async ({ client_id, reason, from_server }) => {
+      const ts = await conn.getClient();
+      const reasonId = from_server ? ReasonIdentifier.KICK_SERVER : ReasonIdentifier.KICK_CHANNEL;
+      await ts.clientKick(String(client_id), reasonId, reason);
+      return toolResponse({ status: "ok", client_id, from: from_server ? "server" : "channel", reason });
+    })
+  );
+
+  server.tool(
+    "client_ban",
+    "Ban a client from the server",
+    {
+      client_id: z.number().describe("Client ID"),
+      reason: z.string().default("Banned by AI").describe("Ban reason"),
+      duration: z.number().default(0).describe("Ban duration in seconds (0 = permanent)"),
+    },
+    handleToolError("client_ban", async ({ client_id, reason, duration }) => {
+      const ts = await conn.getClient();
+      await ts.banClient({ clid: String(client_id), time: duration, banreason: reason });
+      return toolResponse({ status: "ok", client_id, duration, permanent: duration === 0, reason });
+    })
+  );
+
+  server.tool(
+    "client_perm",
+    "Manage a client's server group membership and individual permissions",
+    {
+      client_id: z.number().describe("Client ID"),
+      action: z.enum(["add_group", "remove_group", "list_groups", "add_perm", "remove_perm", "list_perms"]).describe("Action to perform"),
+      group_id: z.number().optional().describe("Server group ID (for add_group / remove_group)"),
+      permission: z.string().optional().describe("Permission name (for add_perm / remove_perm)"),
+      value: z.number().optional().describe("Permission value (for add_perm)"),
       skip: z.boolean().default(false).describe("Skip flag for permission"),
       negate: z.boolean().default(false).describe("Negate flag for permission"),
     },
-    handleToolError("manage_user_permissions", async ({ client_id, action, group_id, permission, value, skip, negate }) => {
+    handleToolError("client_perm", async ({ client_id, action, group_id, permission, value, skip, negate }) => {
       const ts = await conn.getClient();
 
       const getDbId = async (): Promise<string> => {
         const infos = await ts.clientInfo([String(client_id)]);
         const dbId = infos[0].clientDatabaseId;
-        if (!dbId) throw new Error("Could not get client database ID");
+        if (!dbId) throw new Error("Could not resolve client database ID");
         return String(dbId);
       };
 
       if (action === "add_group") {
-        if (group_id === undefined) throw new Error("Server group ID required for add_group");
+        if (group_id === undefined) throw new Error("group_id is required for add_group");
         const dbId = await getDbId();
         await ts.serverGroupAddClient(dbId, String(group_id));
         return toolResponse({ status: "ok", client_id, group_id });
       }
 
       if (action === "remove_group") {
-        if (group_id === undefined) throw new Error("Server group ID required for remove_group");
+        if (group_id === undefined) throw new Error("group_id is required for remove_group");
         const dbId = await getDbId();
         await ts.serverGroupDelClient(dbId, String(group_id));
         return toolResponse({ status: "ok", client_id, group_id });
@@ -126,21 +126,21 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
         return toolResponse(data, data.length === 0 ? `Client ${client_id} has no server groups assigned.` : undefined);
       }
 
-      if (action === "add_permission") {
-        if (!permission || value === undefined) throw new Error("Permission name and value required");
+      if (action === "add_perm") {
+        if (!permission || value === undefined) throw new Error("permission and value are required for add_perm");
         const dbId = await getDbId();
         await ts.clientAddPerm(dbId, { permname: permission, permvalue: value, permskip: skip, permnegated: negate });
         return toolResponse({ status: "ok", client_id, permission, value });
       }
 
-      if (action === "remove_permission") {
-        if (!permission) throw new Error("Permission name required");
+      if (action === "remove_perm") {
+        if (!permission) throw new Error("permission is required for remove_perm");
         const dbId = await getDbId();
         await ts.clientDelPerm(dbId, permission);
         return toolResponse({ status: "ok", client_id, permission });
       }
 
-      // list_permissions
+      // list_perms
       const dbId = await getDbId();
       const perms = await ts.clientPermList(dbId, true);
       const data = perms.map((p) => ({ name: p.getPerm(), value: p.getValue() }));
@@ -149,39 +149,16 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
   );
 
   server.tool(
-    "diagnose_permissions",
-    "Diagnose current connection permissions and provide troubleshooting help",
-    {},
-    handleToolError("diagnose_permissions", async () => {
+    "client_poke",
+    "Send a poke (alert popup) to a client — more attention-grabbing than a private message",
+    {
+      client_id: z.number().describe("Target client ID"),
+      message: z.string().describe("Poke message"),
+    },
+    handleToolError("client_poke", async ({ client_id, message }) => {
       const ts = await conn.getClient();
-      const checks: { test: string; status: "ok" | "fail"; detail?: string }[] = [];
-
-      try {
-        const whoami = await ts.whoami();
-        checks.push({
-          test: "connection",
-          status: "ok",
-          detail: `client_id=${whoami.clientId}, db_id=${whoami.clientDatabaseId}, nickname=${whoami.clientNickname}`,
-        });
-      } catch (e) {
-        checks.push({ test: "connection", status: "fail", detail: String(e) });
-        return toolResponse({ checks });
-      }
-
-      for (const [test, fn] of [
-        ["server_info", () => ts.serverInfo()],
-        ["list_clients", () => ts.clientList()],
-        ["list_channels", () => ts.channelList()],
-      ] as const) {
-        try {
-          await fn();
-          checks.push({ test, status: "ok" });
-        } catch (e) {
-          checks.push({ test, status: "fail", detail: String(e) });
-        }
-      }
-
-      return toolResponse({ checks });
+      await ts.clientPoke(String(client_id), message);
+      return toolResponse({ status: "ok", client_id, message });
     })
   );
 }

@@ -20,7 +20,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 ## Features
 
-- **31 purpose-built tools** covering server management, channels, clients, permissions, moderation, and more
+- **34 purpose-built tools** covering server management, channels, clients, groups, permissions, moderation, and more
 - **Lazy connection** — connects to TeamSpeak only when the first tool is invoked
 - **Exponential backoff retry** — automatic reconnection with up to 3 attempts
 - **Graceful shutdown** — cleans up the ServerQuery session on process exit
@@ -105,86 +105,89 @@ Configuration is resolved from **CLI arguments** first, then **environment varia
 
 ## Tools Reference
 
-### Core
+### Server (`server_*`)
 
 | Tool | Description |
 |---|---|
-| `server_info` | Get server name, version, platform, client count, uptime, etc. |
-| `list_clients` | List all connected clients with IDs, nicknames, and channels |
-| `list_channels` | List all channels on the server |
+| `server_info` | Get server details (scope: `overview` or `connection` statistics) |
+| `server_list` | List resources (resource: `clients`, `channels`, `server_groups`, `channel_groups`) |
+| `server_search` | Search for clients or channels by pattern |
+| `server_log` | View recent virtual server or instance log entries |
+| `server_diagnose` | Run a diagnostic check on the current connection's permissions |
 
-### Messaging
-
-| Tool | Description |
-|---|---|
-| `send_channel_message` | Send a text message to a channel |
-| `send_private_message` | Send a private message to a specific client |
-| `poke_client` | Send a poke alert notification to a client |
-
-### Channel Management
+### Channel (`channel_*`)
 
 | Tool | Description |
 |---|---|
-| `create_channel` | Create a new channel (permanent or temporary) |
-| `delete_channel` | Delete a channel (with optional force flag) |
-| `update_channel` | Update channel properties (name, password, codec, talk power, etc.) |
+| `channel_create` | Create a new channel (permanent or temporary) |
+| `channel_delete` | Delete a channel (with optional force flag) |
+| `channel_update` | Update channel properties (name, password, codec, talk power, etc.) |
 | `channel_info` | Get detailed channel information |
-| `manage_channel_permissions` | Add, remove, or list permissions on a channel |
+| `channel_perm` | Add, remove, or list permissions on a channel |
 
-### Client Management
-
-| Tool | Description |
-|---|---|
-| `move_client` | Move a client to another channel |
-| `kick_client` | Kick a client from the server or channel |
-| `ban_client` | Ban a client (timed or permanent) |
-| `client_info_detailed` | Get detailed info: platform, version, country, IP, idle time, etc. |
-| `manage_user_permissions` | Add/remove server groups and individual permissions for a client |
-| `diagnose_permissions` | Run a diagnostic check on the current connection's permissions |
-
-### Server Groups
+### Client (`client_*`)
 
 | Tool | Description |
 |---|---|
-| `list_server_groups` | List all server groups |
-| `create_server_group` | Create a new server group |
-| `manage_server_group_permissions` | Add, remove, or list permissions on a server group |
+| `client_info` | Get detailed info: platform, version, country, IP, idle time, etc. |
+| `client_move` | Move a client to another channel |
+| `client_kick` | Kick a client from the server or channel |
+| `client_ban` | Ban a client (timed or permanent) |
+| `client_perm` | Manage server group membership and individual permissions |
+| `client_poke` | Send a poke alert notification to a client |
 
-### Moderation
-
-| Tool | Description |
-|---|---|
-| `list_bans` | List all active ban rules |
-| `manage_ban_rules` | Create, delete, or clear ban rules by IP/name/UID |
-| `list_complaints` | List complaints (optionally filtered by target client) |
-
-### Search
+### Server Group (`sgroup_*`)
 
 | Tool | Description |
 |---|---|
-| `search_clients` | Search for clients by name or unique identifier |
-| `find_channels` | Search for channels by name pattern |
+| `sgroup_create` | Create a new server group |
+| `sgroup_delete` | Delete a server group |
+| `sgroup_perm` | Add, remove, or list permissions on a server group |
+| `sgroup_clients` | List all clients assigned to a server group |
 
-### Privilege Tokens
-
-| Tool | Description |
-|---|---|
-| `list_privilege_tokens` | List all available privilege keys/tokens |
-| `create_privilege_token` | Create a server group or channel group token |
-
-### File Browser
+### Channel Group (`cgroup_*`)
 
 | Tool | Description |
 |---|---|
-| `list_files` | List files in a channel's file repository |
-| `get_file_info` | Get detailed info about a specific file |
+| `cgroup_create` | Create a new channel group |
+| `cgroup_perm` | Add, remove, or list permissions on a channel group |
+| `cgroup_assign` | Assign a client to a channel group in a specific channel |
 
-### Logging & Diagnostics
+### Permission (`perm_*`)
 
 | Tool | Description |
 |---|---|
-| `view_server_logs` | View recent virtual server or instance log entries |
-| `get_connection_info` | Get detailed server connection statistics |
+| `perm_list` | List all available permission definitions (name, ID, description) |
+| `perm_find` | Find all assignments of a permission across the server |
+| `perm_overview` | Get effective permission overview for a client in a channel |
+
+### Messaging (`msg_*`)
+
+| Tool | Description |
+|---|---|
+| `msg_send` | Send a text message (mode: `channel` or `private`) |
+
+### Moderation (`ban_*` / `complaint_*`)
+
+| Tool | Description |
+|---|---|
+| `ban_list` | List all active ban rules |
+| `ban_manage` | Create, delete, or clear ban rules by IP/name/UID |
+| `complaint_list` | List complaints (optionally filtered by target client) |
+
+### Tokens (`token_*`)
+
+| Tool | Description |
+|---|---|
+| `token_list` | List all available privilege keys/tokens |
+| `token_create` | Create a server group or channel group token |
+
+### Files (`file_*`)
+
+| Tool | Description |
+|---|---|
+| `file_list` | List files in a channel's file repository |
+| `file_info` | Get detailed info about a specific file |
 
 ## Development
 
@@ -212,23 +215,23 @@ This launches a local web UI where you can browse available tools, invoke them i
 
 ```
 src/
-├── index.ts           # Entry point, stdio transport, graceful shutdown
-├── config.ts          # CLI + env configuration parsing
-├── connection.ts      # TeamSpeak connection with retry & lazy init
-├── server.ts          # MCP server setup & tool registration
+├── index.ts             # Entry point, stdio transport, graceful shutdown
+├── config.ts            # CLI + env configuration parsing
+├── connection.ts        # TeamSpeak connection with retry & lazy init
+├── server.ts            # MCP server setup & tool registration
 ├── utils/
 │   └── tool-handler.ts  # Error handling & response utilities
 └── tools/
-    ├── core.ts        # Server info, client/channel listing
-    ├── messaging.ts   # Channel/private messaging, poke
-    ├── channel.ts     # Channel CRUD & permissions
-    ├── client.ts      # Client management & permissions
-    ├── server-group.ts # Server group management
-    ├── moderation.ts  # Bans & complaints
-    ├── search.ts      # Client/channel search
-    ├── token.ts       # Privilege token management
-    ├── file.ts        # File browser
-    └── logging.ts     # Server logs & connection info
+    ├── server.ts        # Server info, resource listing, search, logs, diagnostics
+    ├── channel.ts       # Channel CRUD & permissions
+    ├── client.ts        # Client management, permissions & poke
+    ├── server-group.ts  # Server group CRUD, permissions & members
+    ├── channel-group.ts # Channel group CRUD, permissions & assignment
+    ├── permission.ts    # Global permission queries & overview
+    ├── messaging.ts     # Channel & private messaging
+    ├── moderation.ts    # Bans & complaints
+    ├── token.ts         # Privilege token management
+    └── file.ts          # Channel file browser
 ```
 
 ## License

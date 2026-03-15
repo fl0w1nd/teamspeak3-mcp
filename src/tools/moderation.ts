@@ -5,10 +5,10 @@ import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerModerationTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
-    "list_bans",
+    "ban_list",
     "List all active ban rules on the virtual server",
     {},
-    handleToolError("list_bans", async () => {
+    handleToolError("ban_list", async () => {
       const ts = await conn.getClient();
       const bans = await ts.banList();
       const data = bans.map((b) => ({
@@ -24,8 +24,8 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
   );
 
   server.tool(
-    "manage_ban_rules",
-    "Create, delete or manage ban rules",
+    "ban_manage",
+    "Create, delete, or clear ban rules on the server",
     {
       action: z.enum(["add", "delete", "delete_all"]).describe("Action to perform"),
       ban_id: z.number().optional().describe("Ban ID (required for delete)"),
@@ -35,7 +35,7 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       time: z.number().default(0).describe("Ban duration in seconds (0 = permanent)"),
       reason: z.string().default("Banned by AI").describe("Ban reason"),
     },
-    handleToolError("manage_ban_rules", async ({ action, ban_id, ip, name, uid, time, reason }) => {
+    handleToolError("ban_manage", async ({ action, ban_id, ip, name, uid, time, reason }) => {
       const ts = await conn.getClient();
 
       if (action === "add") {
@@ -48,7 +48,7 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       }
 
       if (action === "delete") {
-        if (ban_id === undefined) throw new Error("Ban ID required for delete action");
+        if (ban_id === undefined) throw new Error("ban_id is required for delete");
         await ts.banDel(String(ban_id));
         return toolResponse({ status: "ok", action: "delete", ban_id });
       }
@@ -59,15 +59,15 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
   );
 
   server.tool(
-    "list_complaints",
-    "List complaints on the virtual server",
+    "complaint_list",
+    "List complaints on the virtual server, optionally filtered by target client",
     {
-      target_client_database_id: z.number().optional().describe("Target client database ID to filter complaints"),
+      target_client_db_id: z.number().optional().describe("Target client database ID to filter"),
     },
-    handleToolError("list_complaints", async ({ target_client_database_id }) => {
+    handleToolError("complaint_list", async ({ target_client_db_id }) => {
       const ts = await conn.getClient();
       const complaints = await ts.complainList(
-        target_client_database_id !== undefined ? String(target_client_database_id) : undefined
+        target_client_db_id !== undefined ? String(target_client_db_id) : undefined
       );
       const data = complaints.map((c) => ({
         target: { name: c.tname, database_id: c.tcldbid },
