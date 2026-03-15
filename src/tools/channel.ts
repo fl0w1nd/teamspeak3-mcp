@@ -38,14 +38,14 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
 
   server.tool(
     "update_channel",
-    "Update channel properties (name, description, password, talk power, limits, etc.)",
+    "Update channel properties. For talk power presets: 0=normal (everyone talks), 50=moderated, 999=silent",
     {
       channel_id: z.number().describe("Channel ID to update"),
       name: z.string().optional().describe("New channel name"),
       description: z.string().optional().describe("New channel description"),
       password: z.string().optional().describe("New channel password (empty string to remove)"),
       max_clients: z.number().optional().describe("Maximum number of clients"),
-      talk_power: z.number().optional().describe("Required talk power to speak in channel"),
+      talk_power: z.number().optional().describe("Required talk power (0=normal, 50=moderated, 999=silent)"),
       codec_quality: z.number().optional().describe("Audio codec quality 1-10"),
       permanent: z.boolean().optional().describe("Make channel permanent"),
     },
@@ -92,38 +92,6 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       ];
 
       return toolResponse(lines.join("\n"));
-    })
-  );
-
-  server.tool(
-    "set_channel_talk_power",
-    "Set talk power requirement for a channel (useful for AFK/silent channels)",
-    {
-      channel_id: z.number().describe("Channel ID to configure"),
-      talk_power: z.number().optional().describe("Required talk power (0=everyone, 999=silent)"),
-      preset: z.enum(["silent", "moderated", "normal"]).optional().describe("Quick preset: 'silent' (999), 'moderated' (50), 'normal' (0)"),
-    },
-    handleToolError("set_channel_talk_power", async ({ channel_id, talk_power, preset }) => {
-      let power = talk_power;
-      if (preset === "silent") power = 999;
-      else if (preset === "moderated") power = 50;
-      else if (preset === "normal") power = 0;
-
-      if (power === undefined) {
-        throw new Error("Either talk_power or preset must be specified");
-      }
-
-      const ts = await conn.getClient();
-      await ts.channelEdit(String(channel_id), { channelNeededTalkPower: power });
-
-      let desc: string;
-      if (power === 0) desc = "Channel is now open - everyone can talk";
-      else if (power >= 999) desc = "Channel is now silent - only high-privilege users can talk";
-      else if (power >= 50) desc = "Channel is now moderated - only moderators+ can talk";
-      else desc = `Custom talk power requirement: ${power}`;
-
-      const presetLabel = preset ? ` (preset: ${preset})` : "";
-      return toolResponse(`Talk power for channel ${channel_id} set to ${power}${presetLabel}\n${desc}`);
     })
   );
 

@@ -55,41 +55,4 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
       return toolResponse(lines.join("\n"));
     })
   );
-
-  server.tool(
-    "manage_file_permissions",
-    "List active file transfers and manage file transfer permissions",
-    {
-      action: z.enum(["list_transfers", "stop_transfer"]).describe("Action to perform"),
-      transfer_id: z.number().optional().describe("File transfer ID (for stop_transfer)"),
-      delete_partial: z.boolean().default(false).describe("Delete partial file when stopping transfer"),
-    },
-    handleToolError("manage_file_permissions", async ({ action, transfer_id, delete_partial }) => {
-      const ts = await conn.getClient();
-
-      if (action === "list_transfers") {
-        const transfers = await ts.ftList();
-
-        if (transfers.length === 0) {
-          return toolResponse("No active file transfers.");
-        }
-
-        const lines = ["**Active File Transfers:**", ""];
-        for (const t of transfers) {
-          lines.push(`- **Transfer ID ${t.serverftfid}**`);
-          lines.push(`  - Client: ${t.clid}`);
-          lines.push(`  - File: ${t.name}`);
-          lines.push(`  - Size: ${t.size} bytes (done: ${t.sizedone})`);
-          lines.push(`  - Speed: ${t.currentSpeed} B/s`);
-          lines.push("");
-        }
-        return toolResponse(lines.join("\n"));
-      }
-
-      // stop_transfer
-      if (transfer_id === undefined) throw new Error("Transfer ID required for stop_transfer");
-      await ts.ftStop(transfer_id, delete_partial ? 1 : 0);
-      return toolResponse(`File transfer ${transfer_id} stopped`);
-    })
-  );
 }

@@ -10,7 +10,6 @@ import { registerSearchTools } from "./tools/search.js";
 import { registerTokenTools } from "./tools/token.js";
 import { registerFileTools } from "./tools/file.js";
 import { registerLoggingTools } from "./tools/logging.js";
-import { registerSnapshotTools } from "./tools/snapshot.js";
 
 export function createServer(conn: TeamSpeakConnection): McpServer {
   const server = new McpServer({
@@ -28,7 +27,6 @@ export function createServer(conn: TeamSpeakConnection): McpServer {
   registerTokenTools(server, conn);
   registerFileTools(server, conn);
   registerLoggingTools(server, conn);
-  registerSnapshotTools(server, conn);
 
   return server;
 }

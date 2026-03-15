@@ -35,29 +35,6 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
   );
 
   server.tool(
-    "assign_client_to_group",
-    "Add or remove a client from a server group",
-    {
-      client_database_id: z.number().describe("Client database ID"),
-      action: z.enum(["add", "remove"]).describe("Action to perform"),
-      group_id: z.number().describe("Server group ID"),
-    },
-    handleToolError("assign_client_to_group", async ({ client_database_id, action, group_id }) => {
-      const ts = await conn.getClient();
-      const dbId = String(client_database_id);
-      const gId = String(group_id);
-
-      if (action === "add") {
-        await ts.serverGroupAddClient(dbId, gId);
-        return toolResponse(`Client ${client_database_id} added to server group ${group_id}`);
-      }
-
-      await ts.serverGroupDelClient(dbId, gId);
-      return toolResponse(`Client ${client_database_id} removed from server group ${group_id}`);
-    })
-  );
-
-  server.tool(
     "manage_server_group_permissions",
     "Add, remove or list permissions for a server group",
     {
