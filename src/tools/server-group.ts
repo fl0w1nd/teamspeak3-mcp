@@ -11,11 +11,8 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
     handleToolError("list_server_groups", async () => {
       const ts = await conn.getClient();
       const groups = await ts.serverGroupList();
-      return toolResponse(groups.map((g) => ({
-        group_id: g.sgid,
-        name: g.name,
-        type: g.type,
-      })));
+      const data = groups.map((g) => ({ group_id: g.sgid, name: g.name, type: g.type }));
+      return toolResponse(data, data.length === 0 ? "No server groups exist on this virtual server." : undefined);
     })
   );
 
@@ -61,7 +58,8 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       }
 
       const perms = await ts.serverGroupPermList(gId, true);
-      return toolResponse(perms.map((p) => ({ name: p.getPerm(), value: p.getValue() })));
+      const data = perms.map((p) => ({ name: p.getPerm(), value: p.getValue() }));
+      return toolResponse(data, data.length === 0 ? `Server group ${group_id} has no custom permissions.` : undefined);
     })
   );
 }

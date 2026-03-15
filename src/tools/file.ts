@@ -15,11 +15,12 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_files", async ({ channel_id, path, channel_password }) => {
       const ts = await conn.getClient();
       const files = await ts.ftGetFileList(String(channel_id), path, channel_password);
-      return toolResponse(files.map((f) => ({
+      const data = files.map((f) => ({
         name: f.name,
         type: f.type === 0 ? "directory" : "file",
         size: f.type === 1 ? f.size : undefined,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? `No files found in channel ${channel_id} at path '${path}'.` : undefined);
     })
   );
 

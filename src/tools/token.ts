@@ -12,12 +12,13 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
     handleToolError("list_privilege_tokens", async () => {
       const ts = await conn.getClient();
       const tokens = await ts.privilegeKeyList();
-      return toolResponse(tokens.map((t) => ({
+      const data = tokens.map((t) => ({
         token: t.token,
         type: t.tokenType === 0 ? "server_group" : "channel_group",
         group_id: t.tokenId1,
         description: t.tokenDescription || null,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? "No privilege tokens exist on this server." : undefined);
     })
   );
 

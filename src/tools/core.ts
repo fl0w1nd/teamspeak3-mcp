@@ -31,11 +31,12 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_clients", async () => {
       const ts = await conn.getClient();
       const clients = await ts.clientList();
-      return toolResponse(clients.map((c) => ({
+      const data = clients.map((c) => ({
         client_id: c.clid,
         nickname: c.nickname,
         channel_id: c.cid,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? "No clients are currently connected to the server." : undefined);
     })
   );
 
@@ -46,10 +47,11 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_channels", async () => {
       const ts = await conn.getClient();
       const channels = await ts.channelList();
-      return toolResponse(channels.map((ch) => ({
+      const data = channels.map((ch) => ({
         channel_id: ch.cid,
         name: ch.name,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? "No channels exist on the server." : undefined);
     })
   );
 }

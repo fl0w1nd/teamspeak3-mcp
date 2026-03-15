@@ -119,10 +119,8 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       }
 
       const perms = await ts.channelPermList(cid, true);
-      return toolResponse(perms.map((p) => ({
-        name: p.getPerm(),
-        value: p.getValue(),
-      })));
+      const data = perms.map((p) => ({ name: p.getPerm(), value: p.getValue() }));
+      return toolResponse(data, data.length === 0 ? `Channel ${channel_id} has no custom permissions.` : undefined);
     })
   );
 }

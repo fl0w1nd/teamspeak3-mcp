@@ -11,14 +11,15 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
     handleToolError("list_bans", async () => {
       const ts = await conn.getClient();
       const bans = await ts.banList();
-      return toolResponse(bans.map((b) => ({
+      const data = bans.map((b) => ({
         ban_id: b.banid,
         ip: b.ip || null,
         name: b.name || null,
         uid: b.uid || null,
         duration: b.duration,
         invoker: b.invokername,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? "No active ban rules on this server." : undefined);
     })
   );
 
@@ -68,12 +69,13 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       const complaints = await ts.complainList(
         target_client_database_id !== undefined ? String(target_client_database_id) : undefined
       );
-      return toolResponse(complaints.map((c) => ({
+      const data = complaints.map((c) => ({
         target: { name: c.tname, database_id: c.tcldbid },
         from: { name: c.fname, database_id: c.fcldbid },
         message: c.message,
         timestamp: c.timestamp,
-      })));
+      }));
+      return toolResponse(data, data.length === 0 ? "No complaints found." : undefined);
     })
   );
 }

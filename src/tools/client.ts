@@ -122,7 +122,8 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       if (action === "list_groups") {
         const dbId = await getDbId();
         const groups = await ts.serverGroupsByClientId(dbId);
-        return toolResponse(groups.map((g) => ({ group_id: g.sgid, name: g.name })));
+        const data = groups.map((g) => ({ group_id: g.sgid, name: g.name }));
+        return toolResponse(data, data.length === 0 ? `Client ${client_id} has no server groups assigned.` : undefined);
       }
 
       if (action === "add_permission") {
@@ -142,7 +143,8 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       // list_permissions
       const dbId = await getDbId();
       const perms = await ts.clientPermList(dbId, true);
-      return toolResponse(perms.map((p) => ({ name: p.getPerm(), value: p.getValue() })));
+      const data = perms.map((p) => ({ name: p.getPerm(), value: p.getValue() }));
+      return toolResponse(data, data.length === 0 ? `Client ${client_id} has no custom permissions.` : undefined);
     })
   );
 

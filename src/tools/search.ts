@@ -16,11 +16,13 @@ export function registerSearchTools(server: McpServer, conn: TeamSpeakConnection
 
       if (search_by_uid) {
         const results = await ts.clientDbFind(pattern, true);
-        return toolResponse(results.map((r) => ({ database_id: r.cldbid })));
+        const data = results.map((r) => ({ database_id: r.cldbid }));
+        return toolResponse(data, data.length === 0 ? `No clients found matching UID pattern '${pattern}'.` : undefined);
       }
 
       const results = await ts.clientFind(pattern);
-      return toolResponse(results.map((r) => ({ client_id: r.clid, nickname: r.clientNickname })));
+      const data = results.map((r) => ({ client_id: r.clid, nickname: r.clientNickname }));
+      return toolResponse(data, data.length === 0 ? `No online clients found matching '${pattern}'.` : undefined);
     })
   );
 
@@ -33,7 +35,8 @@ export function registerSearchTools(server: McpServer, conn: TeamSpeakConnection
     handleToolError("find_channels", async ({ pattern }) => {
       const ts = await conn.getClient();
       const results = await ts.channelFind(pattern);
-      return toolResponse(results.map((r) => ({ channel_id: r.cid, name: r.channelName })));
+      const data = results.map((r) => ({ channel_id: r.cid, name: r.channelName }));
+      return toolResponse(data, data.length === 0 ? `No channels found matching '${pattern}'.` : undefined);
     })
   );
 }

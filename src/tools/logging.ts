@@ -21,7 +21,8 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
         instance_log ? 1 : 0,
         begin_pos
       );
-      return toolResponse(entries.map((e) => e.l));
+      const data = entries.map((e) => e.l);
+      return toolResponse(data, data.length === 0 ? "No log entries found." : undefined);
     })
   );
 
