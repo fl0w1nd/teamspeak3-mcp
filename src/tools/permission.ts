@@ -4,19 +4,51 @@ import type { TeamSpeakConnection } from "../connection.js";
 import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerPermissionTools(server: McpServer, conn: TeamSpeakConnection): void {
+  const categoryPrefixes: Record<string, string[]> = {
+    server:   ["b_serverinstance_", "i_serverinstance_", "b_virtualserver_", "i_virtualserver_"],
+    channel:  ["b_channel_", "i_channel_"],
+    client:   ["b_client_", "i_client_"],
+    group:    ["b_group_", "i_group_", "b_virtualserver_servergroup_", "b_virtualserver_channelgroup_"],
+    filetransfer: ["b_ft_", "i_ft_"],
+  };
+
   server.tool(
     "perm_list",
-    "List all available permission definitions on the server (name, ID, description). Useful for discovering valid permission names before assigning them",
-    {},
-    handleToolError("perm_list", async () => {
+    "List available permission definitions. Use 'filter' to search by keyword (e.g. 'kick') or 'category' to narrow by domain. Returns only names by default; set verbose=true for descriptions",
+    {
+      filter: z.string().optional().describe("Keyword to search in permission name or description"),
+      category: z.enum(["server", "channel", "client", "group", "filetransfer"]).optional().describe("Filter by permission category"),
+      verbose: z.boolean().default(false).describe("Include permission descriptions (increases token usage)"),
+    },
+    handleToolError("perm_list", async ({ filter, category, verbose }) => {
       const ts = await conn.getClient();
-      const perms = await ts.permissionList();
-      const data = perms.map((p) => ({
-        id: p.permid,
-        name: p.permname,
-        description: p.permdesc,
-      }));
-      return toolResponse(data);
+      let perms = await ts.permissionList();
+
+      perms = perms.filter((p) => !p.permname.startsWith("i_needed_modify_power_"));
+
+      if (category) {
+        const prefixes = categoryPrefixes[category];
+        perms = perms.filter((p) => prefixes.some((px) => p.permname.startsWith(px)));
+      }
+
+      if (filter) {
+        const kw = filter.toLowerCase();
+        perms = perms.filter((p) =>
+          p.permname.toLowerCase().includes(kw) ||
+          (p.permdesc && p.permdesc.toLowerCase().includes(kw)),
+        );
+      }
+
+      const data = verbose
+        ? perms.map((p) => ({ id: p.permid, name: p.permname, description: p.permdesc }))
+        : perms.map((p) => p.permname);
+
+      return toolResponse(
+        data,
+        data.length === 0
+          ? `No permissions found${filter ? ` matching '${filter}'` : ""}${category ? ` in category '${category}'` : ""}.`
+          : `${data.length} permissions returned. Use 'filter' or 'category' to narrow results.`,
+      );
     })
   );
 
