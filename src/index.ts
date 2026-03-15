@@ -1,1 +1,20 @@
 #!/usr/bin/env node
+
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { parseConfig } from "./config.js";
+import { TeamSpeakConnection } from "./connection.js";
+import { createServer } from "./server.js";
+
+async function main(): Promise<void> {
+  const config = parseConfig(process.argv.slice(2));
+  const conn = new TeamSpeakConnection(config);
+  const server = createServer(conn);
+
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});
