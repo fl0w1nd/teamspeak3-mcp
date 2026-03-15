@@ -4,6 +4,7 @@
 
 **通过 Model Context Protocol，让 AI 模型管理你的 TeamSpeak 3 服务器。**
 
+[![npm version](https://img.shields.io/npm/v/teamspeak3-mcp?color=cb0000&logo=npm)](https://www.npmjs.com/package/teamspeak3-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
@@ -26,50 +27,31 @@
 - **统一错误处理** — 所有工具均返回结构化的 MCP 错误响应
 - **零配置传输** — 基于 `stdio` 运行，开箱即用
 
-## 前提条件
+## 环境要求
 
 - **Node.js** >= 18
-- **pnpm**（推荐）或 npm
 - 一个启用了 **ServerQuery** 的 TeamSpeak 3 服务器（默认端口 `10011`）
 
 ## 快速开始
 
-```bash
-# 克隆仓库
-git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
-cd teamspeak3-mcp
+在你的 MCP 客户端配置中添加以下内容，适用于大多数客户端：
 
-# 安装依赖
-pnpm install
-
-# 构建
-pnpm build
-
-# 运行（通过环境变量配置）
-TEAMSPEAK_HOST=your-server.com \
-TEAMSPEAK_PASSWORD=your-password \
-pnpm start
+```json
+{
+  "mcpServers": {
+    "teamspeak": {
+      "command": "npx",
+      "args": [
+        "teamspeak3-mcp",
+        "--host", "your-server.com",
+        "--password", "your-password"
+      ]
+    }
+  }
+}
 ```
 
-## 配置
-
-配置优先级：**命令行参数** > **环境变量** > **默认值**。
-
-| 参数 | 命令行标志 | 环境变量 | 默认值 |
-|---|---|---|---|
-| 服务器地址 | `--host` | `TEAMSPEAK_HOST` | `localhost` |
-| 查询端口 | `--port` | `TEAMSPEAK_PORT` | `10011` |
-| 用户名 | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
-| 密码 | `--password` | `TEAMSPEAK_PASSWORD` | *（必填）* |
-| 虚拟服务器 ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
-
-也可以复制示例配置文件：
-
-```bash
-cp config.example.env .env
-```
-
-## MCP 客户端集成
+无需手动安装 — `npx` 会自动下载并运行。
 
 ### Claude Desktop
 
@@ -79,14 +61,11 @@ cp config.example.env .env
 {
   "mcpServers": {
     "teamspeak": {
-      "command": "node",
-      "args": ["/absolute/path/to/teamspeak3-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
       "env": {
         "TEAMSPEAK_HOST": "your-server.com",
-        "TEAMSPEAK_PORT": "10011",
-        "TEAMSPEAK_USER": "serveradmin",
-        "TEAMSPEAK_PASSWORD": "your-password",
-        "TEAMSPEAK_SERVER_ID": "1"
+        "TEAMSPEAK_PASSWORD": "your-password"
       }
     }
   }
@@ -101,8 +80,8 @@ cp config.example.env .env
 {
   "mcpServers": {
     "teamspeak": {
-      "command": "node",
-      "args": ["/absolute/path/to/teamspeak3-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
       "env": {
         "TEAMSPEAK_HOST": "your-server.com",
         "TEAMSPEAK_PASSWORD": "your-password"
@@ -112,24 +91,17 @@ cp config.example.env .env
 }
 ```
 
-### 命令行参数
+## 配置
 
-也可以通过命令行参数传递凭据（优先级高于环境变量）：
+配置优先级：**命令行参数** > **环境变量** > **默认值**。
 
-```json
-{
-  "mcpServers": {
-    "teamspeak": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/teamspeak3-mcp/dist/index.js",
-        "--host", "your-server.com",
-        "--password", "your-password"
-      ]
-    }
-  }
-}
-```
+| 参数 | 命令行标志 | 环境变量 | 默认值 |
+|---|---|---|---|
+| 服务器地址 | `--host` | `TEAMSPEAK_HOST` | `localhost` |
+| 查询端口 | `--port` | `TEAMSPEAK_PORT` | `10011` |
+| 用户名 | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
+| 密码 | `--password` | `TEAMSPEAK_PASSWORD` | *（必填）* |
+| 虚拟服务器 ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
 
 ## 工具一览
 
@@ -217,17 +189,13 @@ cp config.example.env .env
 ## 开发
 
 ```bash
-# 安装依赖
+git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
+cd teamspeak3-mcp
 pnpm install
 
-# 构建项目
-pnpm build
-
-# 监听模式（修改后自动重新构建）
-pnpm dev
-
-# 使用 MCP Inspector 调试（Web UI）
-pnpm inspect
+pnpm build          # 构建项目
+pnpm dev            # 监听模式（修改后自动重新构建）
+pnpm inspect        # 使用 MCP Inspector 调试（Web UI）
 ```
 
 ### MCP Inspector

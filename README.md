@@ -4,6 +4,7 @@
 
 **Let AI models manage your TeamSpeak 3 server through the Model Context Protocol.**
 
+[![npm version](https://img.shields.io/npm/v/teamspeak3-mcp?color=cb0000&logo=npm)](https://www.npmjs.com/package/teamspeak3-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
@@ -26,67 +27,45 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 - **Centralized error handling** — every tool returns structured MCP error responses
 - **Zero-config transport** — runs over `stdio`, works out-of-the-box with any MCP client
 
-## Prerequisites
+## Requirements
 
 - **Node.js** >= 18
-- **pnpm** (recommended) or npm
 - A TeamSpeak 3 server with **ServerQuery** access (port `10011` by default)
 
-## Quick Start
+## Getting Started
 
-```bash
-# Clone the repository
-git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
-cd teamspeak3-mcp
-
-# Install dependencies
-pnpm install
-
-# Build
-pnpm build
-
-# Run (with environment variables)
-TEAMSPEAK_HOST=your-server.com \
-TEAMSPEAK_PASSWORD=your-password \
-pnpm start
-```
-
-## Configuration
-
-Configuration is resolved from **CLI arguments** first, then **environment variables**, with sensible defaults as fallback.
-
-| Parameter | CLI Flag | Env Variable | Default |
-|---|---|---|---|
-| Host | `--host` | `TEAMSPEAK_HOST` | `localhost` |
-| Query Port | `--port` | `TEAMSPEAK_PORT` | `10011` |
-| Username | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
-| Password | `--password` | `TEAMSPEAK_PASSWORD` | *(required)* |
-| Virtual Server ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
-
-You can also copy the example env file:
-
-```bash
-cp config.example.env .env
-```
-
-## MCP Client Integration
-
-### Claude Desktop
-
-Add the following to your Claude Desktop config file (`claude_desktop_config.json`):
+Add the following to your MCP client configuration. This works with most clients:
 
 ```json
 {
   "mcpServers": {
     "teamspeak": {
-      "command": "node",
-      "args": ["/absolute/path/to/teamspeak3-mcp/dist/index.js"],
+      "command": "npx",
+      "args": [
+        "teamspeak3-mcp",
+        "--host", "your-server.com",
+        "--password", "your-password"
+      ]
+    }
+  }
+}
+```
+
+No installation needed — `npx` downloads and runs the package automatically.
+
+### Claude Desktop
+
+Add to your Claude Desktop config file (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "teamspeak": {
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
       "env": {
         "TEAMSPEAK_HOST": "your-server.com",
-        "TEAMSPEAK_PORT": "10011",
-        "TEAMSPEAK_USER": "serveradmin",
-        "TEAMSPEAK_PASSWORD": "your-password",
-        "TEAMSPEAK_SERVER_ID": "1"
+        "TEAMSPEAK_PASSWORD": "your-password"
       }
     }
   }
@@ -101,8 +80,8 @@ Add to your Cursor MCP settings (`.cursor/mcp.json`):
 {
   "mcpServers": {
     "teamspeak": {
-      "command": "node",
-      "args": ["/absolute/path/to/teamspeak3-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
       "env": {
         "TEAMSPEAK_HOST": "your-server.com",
         "TEAMSPEAK_PASSWORD": "your-password"
@@ -112,24 +91,17 @@ Add to your Cursor MCP settings (`.cursor/mcp.json`):
 }
 ```
 
-### CLI Arguments
+## Configuration
 
-You can also pass credentials as CLI arguments, which take priority over env vars:
+Configuration is resolved from **CLI arguments** first, then **environment variables**, with sensible defaults as fallback.
 
-```json
-{
-  "mcpServers": {
-    "teamspeak": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/teamspeak3-mcp/dist/index.js",
-        "--host", "your-server.com",
-        "--password", "your-password"
-      ]
-    }
-  }
-}
-```
+| Parameter | CLI Flag | Env Variable | Default |
+|---|---|---|---|
+| Host | `--host` | `TEAMSPEAK_HOST` | `localhost` |
+| Query Port | `--port` | `TEAMSPEAK_PORT` | `10011` |
+| Username | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
+| Password | `--password` | `TEAMSPEAK_PASSWORD` | *(required)* |
+| Virtual Server ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
 
 ## Tools Reference
 
@@ -217,17 +189,13 @@ You can also pass credentials as CLI arguments, which take priority over env var
 ## Development
 
 ```bash
-# Install dependencies
+git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
+cd teamspeak3-mcp
 pnpm install
 
-# Build the project
-pnpm build
-
-# Watch mode (auto-rebuild on changes)
-pnpm dev
-
-# Debug with MCP Inspector (web UI)
-pnpm inspect
+pnpm build          # Build the project
+pnpm dev            # Watch mode (auto-rebuild on changes)
+pnpm inspect        # Debug with MCP Inspector (web UI)
 ```
 
 ### MCP Inspector
