@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerSnapshotTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
     "create_server_snapshot",
     "Create a snapshot of the virtual server configuration",
     {},
-    async () => {
+    handleToolError("create_server_snapshot", async () => {
       const ts = conn.getClient();
       const result = await ts.createSnapshot();
 
@@ -28,8 +29,8 @@ export function registerSnapshotTools(server: McpServer, conn: TeamSpeakConnecti
         "Use `deploy_server_snapshot` with the full snapshot data to restore this configuration.",
       ];
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 
   server.tool(
@@ -38,15 +39,12 @@ export function registerSnapshotTools(server: McpServer, conn: TeamSpeakConnecti
     {
       snapshot_data: z.string().describe("Snapshot data to deploy (from create_server_snapshot)"),
     },
-    async ({ snapshot_data }) => {
+    handleToolError("deploy_server_snapshot", async ({ snapshot_data }) => {
       const ts = conn.getClient();
       await ts.deploySnapshot(snapshot_data);
-      return {
-        content: [{
-          type: "text",
-          text: "Server snapshot deployed successfully\n\nNote: The server configuration has been restored from the snapshot.",
-        }],
-      };
-    }
+      return toolResponse(
+        "Server snapshot deployed successfully\n\nNote: The server configuration has been restored from the snapshot."
+      );
+    })
   );
 }

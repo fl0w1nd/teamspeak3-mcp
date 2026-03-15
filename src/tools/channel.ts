@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerChannelTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
@@ -11,14 +12,14 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       parent_id: z.number().optional().describe("Parent channel ID"),
       permanent: z.boolean().default(false).describe("Permanent or temporary channel"),
     },
-    async ({ name, parent_id, permanent }) => {
+    handleToolError("create_channel", async ({ name, parent_id, permanent }) => {
       const ts = conn.getClient();
       const channel = await ts.channelCreate(name, {
         cpid: parent_id !== undefined ? String(parent_id) : undefined,
         channelFlagPermanent: permanent,
       });
-      return { content: [{ type: "text", text: `Channel '${name}' created successfully (ID: ${channel.cid})` }] };
-    }
+      return toolResponse(`Channel '${name}' created successfully (ID: ${channel.cid})`);
+    })
   );
 
   server.tool(
@@ -28,11 +29,11 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       channel_id: z.number().describe("Channel ID to delete"),
       force: z.boolean().default(false).describe("Force deletion even if clients are present"),
     },
-    async ({ channel_id, force }) => {
+    handleToolError("delete_channel", async ({ channel_id, force }) => {
       const ts = conn.getClient();
       await ts.channelDelete(String(channel_id), force);
-      return { content: [{ type: "text", text: `Channel ${channel_id} deleted successfully` }] };
-    }
+      return toolResponse(`Channel ${channel_id} deleted successfully`);
+    })
   );
 
   server.tool(
@@ -48,7 +49,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       codec_quality: z.number().optional().describe("Audio codec quality 1-10"),
       permanent: z.boolean().optional().describe("Make channel permanent"),
     },
-    async ({ channel_id, name, description, password, max_clients, talk_power, codec_quality, permanent }) => {
+    handleToolError("update_channel", async ({ channel_id, name, description, password, max_clients, talk_power, codec_quality, permanent }) => {
       const ts = conn.getClient();
       const props: Record<string, string | number | boolean> = {};
       if (name !== undefined) props.channelName = name;
@@ -61,8 +62,8 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
 
       await ts.channelEdit(String(channel_id), props);
       const changed = Object.keys(props).join(", ");
-      return { content: [{ type: "text", text: `Channel ${channel_id} updated successfully\nModified: ${changed}` }] };
-    }
+      return toolResponse(`Channel ${channel_id} updated successfully\nModified: ${changed}`);
+    })
   );
 
   server.tool(
@@ -71,7 +72,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
     {
       channel_id: z.number().describe("Channel ID to get info for"),
     },
-    async ({ channel_id }) => {
+    handleToolError("channel_info", async ({ channel_id }) => {
       const ts = conn.getClient();
       const info = await ts.channelInfo(String(channel_id));
 
@@ -90,8 +91,8 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
         `- **Order**: ${info.channelOrder}`,
       ];
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 
   server.tool(
@@ -102,7 +103,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       talk_power: z.number().optional().describe("Required talk power (0=everyone, 999=silent)"),
       preset: z.enum(["silent", "moderated", "normal"]).optional().describe("Quick preset: 'silent' (999), 'moderated' (50), 'normal' (0)"),
     },
-    async ({ channel_id, talk_power, preset }) => {
+    handleToolError("set_channel_talk_power", async ({ channel_id, talk_power, preset }) => {
       let power = talk_power;
       if (preset === "silent") power = 999;
       else if (preset === "moderated") power = 50;
@@ -122,8 +123,8 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       else desc = `Custom talk power requirement: ${power}`;
 
       const presetLabel = preset ? ` (preset: ${preset})` : "";
-      return { content: [{ type: "text", text: `Talk power for channel ${channel_id} set to ${power}${presetLabel}\n${desc}` }] };
-    }
+      return toolResponse(`Talk power for channel ${channel_id} set to ${power}${presetLabel}\n${desc}`);
+    })
   );
 
   server.tool(
@@ -135,7 +136,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       permission: z.string().optional().describe("Permission name (required for add/remove)"),
       value: z.number().optional().describe("Permission value (required for add)"),
     },
-    async ({ channel_id, action, permission, value }) => {
+    handleToolError("manage_channel_permissions", async ({ channel_id, action, permission, value }) => {
       const ts = conn.getClient();
       const cid = String(channel_id);
 
@@ -144,7 +145,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
           throw new Error("Permission name and value required for add action");
         }
         await ts.channelSetPerm(cid, { permname: permission, permvalue: value });
-        return { content: [{ type: "text", text: `Permission '${permission}' added to channel ${channel_id} with value ${value}` }] };
+        return toolResponse(`Permission '${permission}' added to channel ${channel_id} with value ${value}`);
       }
 
       if (action === "remove") {
@@ -152,20 +153,20 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
           throw new Error("Permission name required for remove action");
         }
         await ts.channelDelPerm(cid, permission);
-        return { content: [{ type: "text", text: `Permission '${permission}' removed from channel ${channel_id}` }] };
+        return toolResponse(`Permission '${permission}' removed from channel ${channel_id}`);
       }
 
       // action === "list"
       const perms = await ts.channelPermList(cid, true);
       if (perms.length === 0) {
-        return { content: [{ type: "text", text: `Channel ${channel_id} has no custom permissions.` }] };
+        return toolResponse(`Channel ${channel_id} has no custom permissions.`);
       }
 
       const lines = [`**Channel ${channel_id} Permissions:**`, ""];
       for (const perm of perms) {
         lines.push(`- **${perm.getPerm()}**: ${perm.getValue()}`);
       }
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 }

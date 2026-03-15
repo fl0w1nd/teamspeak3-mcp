@@ -10,6 +10,18 @@ async function main(): Promise<void> {
   const conn = new TeamSpeakConnection(config);
   const server = createServer(conn);
 
+  const shutdown = async () => {
+    try {
+      await conn.disconnect();
+    } catch {
+      // best-effort cleanup
+    }
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

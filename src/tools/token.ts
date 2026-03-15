@@ -2,18 +2,19 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TokenType } from "ts3-nodejs-library";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
     "list_privilege_tokens",
     "List all privilege keys/tokens available on the server",
     {},
-    async () => {
+    handleToolError("list_privilege_tokens", async () => {
       const ts = conn.getClient();
       const tokens = await ts.privilegeKeyList();
 
       if (tokens.length === 0) {
-        return { content: [{ type: "text", text: "No privilege tokens found." }] };
+        return toolResponse("No privilege tokens found.");
       }
 
       const lines = ["**Privilege Tokens:**", ""];
@@ -25,8 +26,8 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
         lines.push(`  - Description: ${t.tokenDescription || "No description"}`);
         lines.push("");
       }
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 
   server.tool(
@@ -39,7 +40,7 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
       description: z.string().optional().describe("Optional description for the token"),
       custom_set: z.string().optional().describe("Optional custom client properties (format: ident=value|ident=value)"),
     },
-    async ({ token_type, group_id, channel_id, description, custom_set }) => {
+    handleToolError("create_privilege_token", async ({ token_type, group_id, channel_id, description, custom_set }) => {
       const ts = conn.getClient();
       let result: { token: string };
 
@@ -64,7 +65,7 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
         );
       }
 
-      return { content: [{ type: "text", text: `Privilege token created successfully\n**Token**: ${result.token}` }] };
-    }
+      return toolResponse(`Privilege token created successfully\n**Token**: ${result.token}`);
+    })
   );
 }

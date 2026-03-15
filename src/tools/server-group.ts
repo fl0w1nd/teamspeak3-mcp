@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
     "list_server_groups",
     "List all server groups available on the virtual server",
     {},
-    async () => {
+    handleToolError("list_server_groups", async () => {
       const ts = conn.getClient();
       const groups = await ts.serverGroupList();
 
@@ -15,8 +16,8 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       for (const g of groups) {
         lines.push(`- **ID ${g.sgid}**: ${g.name} (Type: ${g.type})`);
       }
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 
   server.tool(
@@ -26,11 +27,11 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       name: z.string().describe("Name for the new server group"),
       type: z.number().default(1).describe("Group type (0=template, 1=regular, 2=query)"),
     },
-    async ({ name, type }) => {
+    handleToolError("create_server_group", async ({ name, type }) => {
       const ts = conn.getClient();
       const group = await ts.serverGroupCreate(name, type);
-      return { content: [{ type: "text", text: `Server group '${name}' created successfully (ID: ${group.sgid})` }] };
-    }
+      return toolResponse(`Server group '${name}' created successfully (ID: ${group.sgid})`);
+    })
   );
 
   server.tool(
@@ -41,19 +42,19 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       action: z.enum(["add", "remove"]).describe("Action to perform"),
       group_id: z.number().describe("Server group ID"),
     },
-    async ({ client_database_id, action, group_id }) => {
+    handleToolError("assign_client_to_group", async ({ client_database_id, action, group_id }) => {
       const ts = conn.getClient();
       const dbId = String(client_database_id);
       const gId = String(group_id);
 
       if (action === "add") {
         await ts.serverGroupAddClient(dbId, gId);
-        return { content: [{ type: "text", text: `Client ${client_database_id} added to server group ${group_id}` }] };
+        return toolResponse(`Client ${client_database_id} added to server group ${group_id}`);
       }
 
       await ts.serverGroupDelClient(dbId, gId);
-      return { content: [{ type: "text", text: `Client ${client_database_id} removed from server group ${group_id}` }] };
-    }
+      return toolResponse(`Client ${client_database_id} removed from server group ${group_id}`);
+    })
   );
 
   server.tool(
@@ -67,32 +68,32 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       skip: z.boolean().default(false).describe("Skip flag for permission"),
       negate: z.boolean().default(false).describe("Negate flag for permission"),
     },
-    async ({ group_id, action, permission, value, skip, negate }) => {
+    handleToolError("manage_server_group_permissions", async ({ group_id, action, permission, value, skip, negate }) => {
       const ts = conn.getClient();
       const gId = String(group_id);
 
       if (action === "add") {
         if (!permission || value === undefined) throw new Error("Permission name and value required for add action");
         await ts.serverGroupAddPerm(gId, { permname: permission, permvalue: value, permskip: skip, permnegated: negate });
-        return { content: [{ type: "text", text: `Permission '${permission}' added to server group ${group_id} with value ${value}` }] };
+        return toolResponse(`Permission '${permission}' added to server group ${group_id} with value ${value}`);
       }
 
       if (action === "remove") {
         if (!permission) throw new Error("Permission name required for remove action");
         await ts.serverGroupDelPerm(gId, permission);
-        return { content: [{ type: "text", text: `Permission '${permission}' removed from server group ${group_id}` }] };
+        return toolResponse(`Permission '${permission}' removed from server group ${group_id}`);
       }
 
       // list
       const perms = await ts.serverGroupPermList(gId, true);
       if (perms.length === 0) {
-        return { content: [{ type: "text", text: `Server group ${group_id} has no custom permissions.` }] };
+        return toolResponse(`Server group ${group_id} has no custom permissions.`);
       }
       const lines = [`**Server Group ${group_id} Permissions:**`, ""];
       for (const p of perms) {
         lines.push(`- **${p.getPerm()}**: ${p.getValue()}`);
       }
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 }

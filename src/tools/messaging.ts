@@ -2,6 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TextMessageTargetMode } from "ts3-nodejs-library";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
@@ -11,12 +12,12 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       channel_id: z.number().optional().describe("Channel ID (uses current channel if not specified)"),
       message: z.string().describe("Message to send"),
     },
-    async ({ channel_id, message }) => {
+    handleToolError("send_channel_message", async ({ channel_id, message }) => {
       const ts = conn.getClient();
       const target = String(channel_id ?? 0);
       await ts.sendTextMessage(target, TextMessageTargetMode.CHANNEL, message);
-      return { content: [{ type: "text", text: `Message sent to channel: ${message}` }] };
-    }
+      return toolResponse(`Message sent to channel: ${message}`);
+    })
   );
 
   server.tool(
@@ -26,11 +27,11 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       client_id: z.number().describe("Target client ID"),
       message: z.string().describe("Message to send"),
     },
-    async ({ client_id, message }) => {
+    handleToolError("send_private_message", async ({ client_id, message }) => {
       const ts = conn.getClient();
       await ts.sendTextMessage(String(client_id), TextMessageTargetMode.CLIENT, message);
-      return { content: [{ type: "text", text: `Private message sent to client ${client_id}: ${message}` }] };
-    }
+      return toolResponse(`Private message sent to client ${client_id}: ${message}`);
+    })
   );
 
   server.tool(
@@ -40,10 +41,10 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       client_id: z.number().describe("Target client ID to poke"),
       message: z.string().describe("Poke message to send"),
     },
-    async ({ client_id, message }) => {
+    handleToolError("poke_client", async ({ client_id, message }) => {
       const ts = conn.getClient();
       await ts.clientPoke(String(client_id), message);
-      return { content: [{ type: "text", text: `Poke sent to client ${client_id}: ${message}` }] };
-    }
+      return toolResponse(`Poke sent to client ${client_id}: ${message}`);
+    })
   );
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { LogLevel } from "ts3-nodejs-library";
 import type { TeamSpeakConnection } from "../connection.js";
+import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 const LOG_LEVEL_MAP: Record<number, LogLevel> = {
   1: LogLevel.ERROR,
@@ -20,7 +21,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       instance_log: z.boolean().default(false).describe("Show instance log instead of virtual server log"),
       begin_pos: z.number().optional().describe("Starting position in log file"),
     },
-    async ({ lines: lineCount, reverse, instance_log, begin_pos }) => {
+    handleToolError("view_server_logs", async ({ lines: lineCount, reverse, instance_log, begin_pos }) => {
       const ts = conn.getClient();
       const entries = await ts.logView(
         lineCount,
@@ -30,15 +31,15 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       );
 
       if (entries.length === 0) {
-        return { content: [{ type: "text", text: "No log entries found." }] };
+        return toolResponse("No log entries found.");
       }
 
       const logLines = [`**Server Logs (${entries.length} entries):**`, ""];
       for (let i = 0; i < entries.length; i++) {
         logLines.push(`${i + 1}. ${entries[i].l}`);
       }
-      return { content: [{ type: "text", text: logLines.join("\n") }] };
-    }
+      return toolResponse(logLines.join("\n"));
+    })
   );
 
   server.tool(
@@ -48,20 +49,20 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       log_level: z.number().min(1).max(4).describe("Log level (1=ERROR, 2=WARNING, 3=DEBUG, 4=INFO)"),
       message: z.string().describe("Log message to add"),
     },
-    async ({ log_level, message }) => {
+    handleToolError("add_log_entry", async ({ log_level, message }) => {
       const ts = conn.getClient();
       const level = LOG_LEVEL_MAP[log_level];
       if (!level) throw new Error("Invalid log level");
       await ts.logAdd(level, message);
-      return { content: [{ type: "text", text: "Log entry added successfully" }] };
-    }
+      return toolResponse("Log entry added successfully");
+    })
   );
 
   server.tool(
     "get_connection_info",
     "Get detailed connection information for the virtual server",
     {},
-    async () => {
+    handleToolError("get_connection_info", async () => {
       const ts = conn.getClient();
       const info = await ts.connectionInfo();
 
@@ -70,8 +71,8 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       for (const [key, value] of entries) {
         lines.push(`- **${key}**: ${value}`);
       }
-      return { content: [{ type: "text", text: lines.join("\n") }] };
-    }
+      return toolResponse(lines.join("\n"));
+    })
   );
 
   server.tool(
@@ -82,7 +83,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       reverse: z.boolean().default(true).describe("Show logs in reverse order (newest first)"),
       begin_pos: z.number().optional().describe("Starting position in log file"),
     },
-    async ({ lines: lineCount, reverse, begin_pos }) => {
+    handleToolError("get_instance_logs", async ({ lines: lineCount, reverse, begin_pos }) => {
       const ts = conn.getClient();
       const entries = await ts.logView(
         lineCount,
@@ -92,14 +93,14 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       );
 
       if (entries.length === 0) {
-        return { content: [{ type: "text", text: "No instance log entries found." }] };
+        return toolResponse("No instance log entries found.");
       }
 
       const logLines = [`**Instance Logs (${entries.length} entries):**`, ""];
       for (let i = 0; i < entries.length; i++) {
         logLines.push(`${i + 1}. ${entries[i].l}`);
       }
-      return { content: [{ type: "text", text: logLines.join("\n") }] };
-    }
+      return toolResponse(logLines.join("\n"));
+    })
   );
 }
