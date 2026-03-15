@@ -12,7 +12,7 @@ export function registerSearchTools(server: McpServer, conn: TeamSpeakConnection
       search_by_uid: z.boolean().default(false).describe("Search by unique identifier instead of name"),
     },
     handleToolError("search_clients", async ({ pattern, search_by_uid }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
 
       if (search_by_uid) {
         const results = await ts.clientDbFind(pattern, true);
@@ -45,7 +45,7 @@ export function registerSearchTools(server: McpServer, conn: TeamSpeakConnection
       pattern: z.string().describe("Search pattern for channel name"),
     },
     handleToolError("find_channels", async ({ pattern }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const results = await ts.channelFind(pattern);
 
       if (results.length === 0) {

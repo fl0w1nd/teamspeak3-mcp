@@ -9,7 +9,7 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
     "List all active ban rules on the virtual server",
     {},
     handleToolError("list_bans", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const bans = await ts.banList();
 
       if (bans.length === 0) {
@@ -43,7 +43,7 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       reason: z.string().default("Banned by AI").describe("Ban reason"),
     },
     handleToolError("manage_ban_rules", async ({ action, ban_id, ip, name, uid, time, reason }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
 
       if (action === "add") {
         const props: Record<string, string | number | undefined> = { time, banreason: reason };
@@ -73,7 +73,7 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       target_client_database_id: z.number().optional().describe("Target client database ID to filter complaints"),
     },
     handleToolError("list_complaints", async ({ target_client_database_id }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const complaints = await ts.complainList(
         target_client_database_id !== undefined ? String(target_client_database_id) : undefined
       );

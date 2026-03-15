@@ -13,7 +13,7 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
       channel_password: z.string().optional().describe("Channel password if required"),
     },
     handleToolError("list_files", async ({ channel_id, path, channel_password }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const files = await ts.ftGetFileList(String(channel_id), path, channel_password);
 
       if (files.length === 0) {
@@ -41,7 +41,7 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
       channel_password: z.string().optional().describe("Channel password if required"),
     },
     handleToolError("get_file_info", async ({ channel_id, file_path, channel_password }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const info = await ts.ftGetFileInfo(String(channel_id), file_path, channel_password);
 
       const lines = [
@@ -65,7 +65,7 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
       delete_partial: z.boolean().default(false).describe("Delete partial file when stopping transfer"),
     },
     handleToolError("manage_file_permissions", async ({ action, transfer_id, delete_partial }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
 
       if (action === "list_transfers") {
         const transfers = await ts.ftList();

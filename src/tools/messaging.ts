@@ -13,7 +13,7 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       message: z.string().describe("Message to send"),
     },
     handleToolError("send_channel_message", async ({ channel_id, message }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const target = String(channel_id ?? 0);
       await ts.sendTextMessage(target, TextMessageTargetMode.CHANNEL, message);
       return toolResponse(`Message sent to channel: ${message}`);
@@ -28,7 +28,7 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       message: z.string().describe("Message to send"),
     },
     handleToolError("send_private_message", async ({ client_id, message }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.sendTextMessage(String(client_id), TextMessageTargetMode.CLIENT, message);
       return toolResponse(`Private message sent to client ${client_id}: ${message}`);
     })
@@ -42,7 +42,7 @@ export function registerMessagingTools(server: McpServer, conn: TeamSpeakConnect
       message: z.string().describe("Poke message to send"),
     },
     handleToolError("poke_client", async ({ client_id, message }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.clientPoke(String(client_id), message);
       return toolResponse(`Poke sent to client ${client_id}: ${message}`);
     })

@@ -4,21 +4,11 @@ import { handleToolError, toolResponse } from "../utils/tool-handler.js";
 
 export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection): void {
   server.tool(
-    "connect_to_server",
-    "Connect to the configured TeamSpeak server",
-    {},
-    handleToolError("connect_to_server", async () => {
-      await conn.connect();
-      return toolResponse("TeamSpeak server connection successful");
-    })
-  );
-
-  server.tool(
     "server_info",
     "Get TeamSpeak server information",
     {},
     handleToolError("server_info", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const info = await ts.serverInfo();
 
       const lines = [
@@ -43,7 +33,7 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     "List all clients connected to the server",
     {},
     handleToolError("list_clients", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const clients = await ts.clientList();
 
       const lines = ["**Connected clients:**", ""];
@@ -60,7 +50,7 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     "List all channels on the server",
     {},
     handleToolError("list_channels", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const channels = await ts.channelList();
 
       const lines = ["**Available channels:**", ""];

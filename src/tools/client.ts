@@ -13,7 +13,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       channel_id: z.number().describe("Destination channel ID"),
     },
     handleToolError("move_client", async ({ client_id, channel_id }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.clientMove(String(client_id), String(channel_id));
       return toolResponse(`Client ${client_id} moved to channel ${channel_id}`);
     })
@@ -28,7 +28,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       from_server: z.boolean().default(false).describe("Kick from server (true) or channel (false)"),
     },
     handleToolError("kick_client", async ({ client_id, reason, from_server }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const reasonId = from_server ? ReasonIdentifier.KICK_SERVER : ReasonIdentifier.KICK_CHANNEL;
       await ts.clientKick(String(client_id), reasonId, reason);
       const location = from_server ? "from server" : "from channel";
@@ -45,7 +45,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       duration: z.number().default(0).describe("Ban duration in seconds (0 = permanent)"),
     },
     handleToolError("ban_client", async ({ client_id, reason, duration }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.banClient({ clid: String(client_id), time: duration, banreason: reason });
       const durationText = duration === 0 ? "permanently" : `for ${duration} seconds`;
       return toolResponse(`Client ${client_id} banned ${durationText}: ${reason}`);
@@ -59,7 +59,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       client_id: z.number().describe("Client ID to get detailed info for"),
     },
     handleToolError("client_info_detailed", async ({ client_id }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const infos = await ts.clientInfo([String(client_id)]);
       const info = infos[0];
 
@@ -106,7 +106,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       negate: z.boolean().default(false).describe("Negate flag for permission"),
     },
     handleToolError("manage_user_permissions", async ({ client_id, action, group_id, permission, value, skip, negate }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
 
       const getDbId = async (): Promise<string> => {
         const infos = await ts.clientInfo([String(client_id)]);
@@ -175,7 +175,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
     "Diagnose current connection permissions and provide troubleshooting help",
     {},
     handleToolError("diagnose_permissions", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const lines: string[] = ["**TeamSpeak MCP Permission Diagnostics**", ""];
 
       try {

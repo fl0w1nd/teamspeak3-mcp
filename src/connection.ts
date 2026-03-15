@@ -6,6 +6,7 @@ const BASE_DELAY_MS = 1000;
 
 export class TeamSpeakConnection {
   private client: TeamSpeak | null = null;
+  private connecting: Promise<TeamSpeak> | null = null;
   private readonly config: AppConfig;
 
   constructor(config: AppConfig) {
@@ -13,7 +14,7 @@ export class TeamSpeakConnection {
   }
 
   /** Connect with exponential backoff retry (up to 3 attempts). */
-  async connect(): Promise<TeamSpeak> {
+  private async connect(): Promise<TeamSpeak> {
     if (this.client) {
       return this.client;
     }
@@ -52,22 +53,29 @@ export class TeamSpeakConnection {
     );
   }
 
+  /**
+   * Returns the active TeamSpeak client, connecting lazily on first call.
+   * Concurrent calls share the same in-flight connection attempt.
+   */
+  async getClient(): Promise<TeamSpeak> {
+    if (this.client) {
+      return this.client;
+    }
+
+    if (!this.connecting) {
+      this.connecting = this.connect().finally(() => {
+        this.connecting = null;
+      });
+    }
+
+    return this.connecting;
+  }
+
   async disconnect(): Promise<void> {
     if (this.client) {
       await this.client.quit();
       this.client = null;
     }
-  }
-
-  /**
-   * Returns the active TeamSpeak client.
-   * @throws {Error} If not connected — call `connect_to_server` first.
-   */
-  getClient(): TeamSpeak {
-    if (!this.client) {
-      throw new Error("Not connected to TeamSpeak server. Use connect_to_server first.");
-    }
-    return this.client;
   }
 
   isConnected(): boolean {

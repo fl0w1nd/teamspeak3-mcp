@@ -9,7 +9,7 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
     "List all server groups available on the virtual server",
     {},
     handleToolError("list_server_groups", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const groups = await ts.serverGroupList();
 
       const lines = ["**Server Groups:**", ""];
@@ -28,7 +28,7 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       type: z.number().default(1).describe("Group type (0=template, 1=regular, 2=query)"),
     },
     handleToolError("create_server_group", async ({ name, type }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const group = await ts.serverGroupCreate(name, type);
       return toolResponse(`Server group '${name}' created successfully (ID: ${group.sgid})`);
     })
@@ -43,7 +43,7 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       group_id: z.number().describe("Server group ID"),
     },
     handleToolError("assign_client_to_group", async ({ client_database_id, action, group_id }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const dbId = String(client_database_id);
       const gId = String(group_id);
 
@@ -69,7 +69,7 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       negate: z.boolean().default(false).describe("Negate flag for permission"),
     },
     handleToolError("manage_server_group_permissions", async ({ group_id, action, permission, value, skip, negate }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const gId = String(group_id);
 
       if (action === "add") {

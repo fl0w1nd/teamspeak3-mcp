@@ -22,7 +22,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       begin_pos: z.number().optional().describe("Starting position in log file"),
     },
     handleToolError("view_server_logs", async ({ lines: lineCount, reverse, instance_log, begin_pos }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const entries = await ts.logView(
         lineCount,
         reverse ? 1 : 0,
@@ -50,7 +50,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       message: z.string().describe("Log message to add"),
     },
     handleToolError("add_log_entry", async ({ log_level, message }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const level = LOG_LEVEL_MAP[log_level];
       if (!level) throw new Error("Invalid log level");
       await ts.logAdd(level, message);
@@ -63,7 +63,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
     "Get detailed connection information for the virtual server",
     {},
     handleToolError("get_connection_info", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const info = await ts.connectionInfo();
 
       const lines = ["**Server Connection Information:**", ""];
@@ -84,7 +84,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
       begin_pos: z.number().optional().describe("Starting position in log file"),
     },
     handleToolError("get_instance_logs", async ({ lines: lineCount, reverse, begin_pos }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const entries = await ts.logView(
         lineCount,
         reverse ? 1 : 0,

@@ -13,7 +13,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       permanent: z.boolean().default(false).describe("Permanent or temporary channel"),
     },
     handleToolError("create_channel", async ({ name, parent_id, permanent }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const channel = await ts.channelCreate(name, {
         cpid: parent_id !== undefined ? String(parent_id) : undefined,
         channelFlagPermanent: permanent,
@@ -30,7 +30,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       force: z.boolean().default(false).describe("Force deletion even if clients are present"),
     },
     handleToolError("delete_channel", async ({ channel_id, force }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.channelDelete(String(channel_id), force);
       return toolResponse(`Channel ${channel_id} deleted successfully`);
     })
@@ -50,7 +50,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       permanent: z.boolean().optional().describe("Make channel permanent"),
     },
     handleToolError("update_channel", async ({ channel_id, name, description, password, max_clients, talk_power, codec_quality, permanent }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const props: Record<string, string | number | boolean> = {};
       if (name !== undefined) props.channelName = name;
       if (description !== undefined) props.channelDescription = description;
@@ -73,7 +73,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       channel_id: z.number().describe("Channel ID to get info for"),
     },
     handleToolError("channel_info", async ({ channel_id }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const info = await ts.channelInfo(String(channel_id));
 
       const lines = [
@@ -113,7 +113,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
         throw new Error("Either talk_power or preset must be specified");
       }
 
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       await ts.channelEdit(String(channel_id), { channelNeededTalkPower: power });
 
       let desc: string;
@@ -137,7 +137,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       value: z.number().optional().describe("Permission value (required for add)"),
     },
     handleToolError("manage_channel_permissions", async ({ channel_id, action, permission, value }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const cid = String(channel_id);
 
       if (action === "add") {

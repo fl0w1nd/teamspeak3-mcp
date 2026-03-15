@@ -10,7 +10,7 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
     "List all privilege keys/tokens available on the server",
     {},
     handleToolError("list_privilege_tokens", async () => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       const tokens = await ts.privilegeKeyList();
 
       if (tokens.length === 0) {
@@ -41,7 +41,7 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
       custom_set: z.string().optional().describe("Optional custom client properties (format: ident=value|ident=value)"),
     },
     handleToolError("create_privilege_token", async ({ token_type, group_id, channel_id, description, custom_set }) => {
-      const ts = conn.getClient();
+      const ts = await conn.getClient();
       let result: { token: string };
 
       if (token_type === TokenType.ServerGroup) {
