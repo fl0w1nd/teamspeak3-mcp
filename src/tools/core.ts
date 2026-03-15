@@ -10,21 +10,17 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("server_info", async () => {
       const ts = await conn.getClient();
       const info = await ts.serverInfo();
-
-      const lines = [
-        "**TeamSpeak Server Information:**",
-        "",
-        `- **Name**: ${info.virtualserverName}`,
-        `- **Version**: ${info.virtualserverVersion}`,
-        `- **Platform**: ${info.virtualserverPlatform}`,
-        `- **Clients**: ${info.virtualserverClientsonline}/${info.virtualserverMaxclients}`,
-        `- **Uptime**: ${info.virtualserverUptime} seconds`,
-        `- **Port**: ${info.virtualserverPort}`,
-        `- **Created**: ${info.virtualserverCreated}`,
-        `- **Unique ID**: ${info.virtualserverUniqueIdentifier}`,
-      ];
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse({
+        name: info.virtualserverName,
+        version: info.virtualserverVersion,
+        platform: info.virtualserverPlatform,
+        clients_online: info.virtualserverClientsonline,
+        max_clients: info.virtualserverMaxclients,
+        uptime_seconds: info.virtualserverUptime,
+        port: info.virtualserverPort,
+        created: info.virtualserverCreated,
+        unique_id: info.virtualserverUniqueIdentifier,
+      });
     })
   );
 
@@ -35,13 +31,11 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_clients", async () => {
       const ts = await conn.getClient();
       const clients = await ts.clientList();
-
-      const lines = ["**Connected clients:**", ""];
-      for (const client of clients) {
-        lines.push(`- **ID ${client.clid}**: ${client.nickname} (Channel: ${client.cid})`);
-      }
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse(clients.map((c) => ({
+        client_id: c.clid,
+        nickname: c.nickname,
+        channel_id: c.cid,
+      })));
     })
   );
 
@@ -52,13 +46,10 @@ export function registerCoreTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_channels", async () => {
       const ts = await conn.getClient();
       const channels = await ts.channelList();
-
-      const lines = ["**Available channels:**", ""];
-      for (const channel of channels) {
-        lines.push(`- **ID ${channel.cid}**: ${channel.name}`);
-      }
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse(channels.map((ch) => ({
+        channel_id: ch.cid,
+        name: ch.name,
+      })));
     })
   );
 }

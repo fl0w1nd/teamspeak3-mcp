@@ -15,7 +15,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
     handleToolError("move_client", async ({ client_id, channel_id }) => {
       const ts = await conn.getClient();
       await ts.clientMove(String(client_id), String(channel_id));
-      return toolResponse(`Client ${client_id} moved to channel ${channel_id}`);
+      return toolResponse({ status: "ok", client_id, channel_id });
     })
   );
 
@@ -31,8 +31,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       const ts = await conn.getClient();
       const reasonId = from_server ? ReasonIdentifier.KICK_SERVER : ReasonIdentifier.KICK_CHANNEL;
       await ts.clientKick(String(client_id), reasonId, reason);
-      const location = from_server ? "from server" : "from channel";
-      return toolResponse(`Client ${client_id} kicked ${location}: ${reason}`);
+      return toolResponse({ status: "ok", client_id, from: from_server ? "server" : "channel", reason });
     })
   );
 
@@ -47,8 +46,7 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
     handleToolError("ban_client", async ({ client_id, reason, duration }) => {
       const ts = await conn.getClient();
       await ts.banClient({ clid: String(client_id), time: duration, banreason: reason });
-      const durationText = duration === 0 ? "permanently" : `for ${duration} seconds`;
-      return toolResponse(`Client ${client_id} banned ${durationText}: ${reason}`);
+      return toolResponse({ status: "ok", client_id, duration, permanent: duration === 0, reason });
     })
   );
 
@@ -62,34 +60,26 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
       const ts = await conn.getClient();
       const infos = await ts.clientInfo([String(client_id)]);
       const info = infos[0];
-
-      const uniqueId = info.clientUniqueIdentifier ?? "N/A";
-      const displayUid = uniqueId.length > 32 ? uniqueId.slice(0, 32) + "..." : uniqueId;
-
-      const lines = [
-        "**Client Information:**",
-        "",
-        `- **Database ID**: ${info.clientDatabaseId}`,
-        `- **Nickname**: ${info.clientNickname}`,
-        `- **Unique ID**: ${displayUid}`,
-        `- **Channel ID**: ${info.cid}`,
-        `- **Talk Power**: ${info.clientTalkPower}`,
-        `- **Client Type**: ${info.clientType === 1 ? "ServerQuery" : "Regular"}`,
-        `- **Platform**: ${info.clientPlatform}`,
-        `- **Version**: ${info.clientVersion}`,
-        `- **Away**: ${info.clientAway ? "Yes" : "No"}`,
-        `- **Away Message**: ${info.clientAwayMessage || "N/A"}`,
-        `- **Input Muted**: ${info.clientInputMuted ? "Yes" : "No"}`,
-        `- **Output Muted**: ${info.clientOutputMuted ? "Yes" : "No"}`,
-        `- **Created**: ${info.clientCreated}`,
-        `- **Last Connected**: ${info.clientLastconnected}`,
-        `- **Country**: ${info.clientCountry || "N/A"}`,
-        `- **IP Address**: ${info.connectionClientIp || "N/A"}`,
-        `- **Idle Time**: ${info.clientIdleTime}ms`,
-        `- **Is Recording**: ${info.clientIsRecording ? "Yes" : "No"}`,
-      ];
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse({
+        database_id: info.clientDatabaseId,
+        nickname: info.clientNickname,
+        unique_id: info.clientUniqueIdentifier ?? null,
+        channel_id: info.cid,
+        talk_power: info.clientTalkPower,
+        client_type: info.clientType === 1 ? "server_query" : "regular",
+        platform: info.clientPlatform,
+        version: info.clientVersion,
+        away: !!info.clientAway,
+        away_message: info.clientAwayMessage || null,
+        input_muted: !!info.clientInputMuted,
+        output_muted: !!info.clientOutputMuted,
+        created: info.clientCreated,
+        last_connected: info.clientLastconnected,
+        country: info.clientCountry || null,
+        ip: info.connectionClientIp || null,
+        idle_time_ms: info.clientIdleTime,
+        is_recording: !!info.clientIsRecording,
+      });
     })
   );
 
@@ -119,54 +109,40 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
         if (group_id === undefined) throw new Error("Server group ID required for add_group");
         const dbId = await getDbId();
         await ts.serverGroupAddClient(dbId, String(group_id));
-        return toolResponse(`Client ${client_id} added to server group ${group_id}`);
+        return toolResponse({ status: "ok", client_id, group_id });
       }
 
       if (action === "remove_group") {
         if (group_id === undefined) throw new Error("Server group ID required for remove_group");
         const dbId = await getDbId();
         await ts.serverGroupDelClient(dbId, String(group_id));
-        return toolResponse(`Client ${client_id} removed from server group ${group_id}`);
+        return toolResponse({ status: "ok", client_id, group_id });
       }
 
       if (action === "list_groups") {
         const dbId = await getDbId();
         const groups = await ts.serverGroupsByClientId(dbId);
-        if (groups.length === 0) {
-          return toolResponse(`Client ${client_id} has no server groups.`);
-        }
-        const lines = [`**Client ${client_id} Server Groups:**`, ""];
-        for (const g of groups) {
-          lines.push(`- **${g.name}** (ID: ${g.sgid})`);
-        }
-        return toolResponse(lines.join("\n"));
+        return toolResponse(groups.map((g) => ({ group_id: g.sgid, name: g.name })));
       }
 
       if (action === "add_permission") {
         if (!permission || value === undefined) throw new Error("Permission name and value required");
         const dbId = await getDbId();
         await ts.clientAddPerm(dbId, { permname: permission, permvalue: value, permskip: skip, permnegated: negate });
-        return toolResponse(`Permission '${permission}' added to client ${client_id} with value ${value}`);
+        return toolResponse({ status: "ok", client_id, permission, value });
       }
 
       if (action === "remove_permission") {
         if (!permission) throw new Error("Permission name required");
         const dbId = await getDbId();
         await ts.clientDelPerm(dbId, permission);
-        return toolResponse(`Permission '${permission}' removed from client ${client_id}`);
+        return toolResponse({ status: "ok", client_id, permission });
       }
 
       // list_permissions
       const dbId = await getDbId();
       const perms = await ts.clientPermList(dbId, true);
-      if (perms.length === 0) {
-        return toolResponse(`Client ${client_id} has no custom permissions.`);
-      }
-      const lines = [`**Client ${client_id} Permissions:**`, ""];
-      for (const p of perms) {
-        lines.push(`- **${p.getPerm()}**: ${p.getValue()}`);
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(perms.map((p) => ({ name: p.getPerm(), value: p.getValue() })));
     })
   );
 
@@ -176,49 +152,34 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
     {},
     handleToolError("diagnose_permissions", async () => {
       const ts = await conn.getClient();
-      const lines: string[] = ["**TeamSpeak MCP Permission Diagnostics**", ""];
+      const checks: { test: string; status: "ok" | "fail"; detail?: string }[] = [];
 
       try {
         const whoami = await ts.whoami();
-        lines.push("OK **Basic connection**: working");
-        lines.push(`  - Client ID: ${whoami.clientId}`);
-        lines.push(`  - Database ID: ${whoami.clientDatabaseId}`);
-        lines.push(`  - Nickname: ${whoami.clientNickname}`);
-        lines.push("");
+        checks.push({
+          test: "connection",
+          status: "ok",
+          detail: `client_id=${whoami.clientId}, db_id=${whoami.clientDatabaseId}, nickname=${whoami.clientNickname}`,
+        });
       } catch (e) {
-        lines.push(`FAIL **Basic connection**: ${e}`);
-        return toolResponse(lines.join("\n"));
+        checks.push({ test: "connection", status: "fail", detail: String(e) });
+        return toolResponse({ checks });
       }
 
-      try {
-        await ts.serverInfo();
-        lines.push("OK **server_info**: accessible");
-      } catch (e) {
-        lines.push(`FAIL **server_info**: ${e}`);
+      for (const [test, fn] of [
+        ["server_info", () => ts.serverInfo()],
+        ["list_clients", () => ts.clientList()],
+        ["list_channels", () => ts.channelList()],
+      ] as const) {
+        try {
+          await fn();
+          checks.push({ test, status: "ok" });
+        } catch (e) {
+          checks.push({ test, status: "fail", detail: String(e) });
+        }
       }
 
-      try {
-        await ts.clientList();
-        lines.push("OK **list_clients**: accessible (elevated permissions)");
-      } catch (e) {
-        lines.push(`FAIL **list_clients**: ${e}`);
-      }
-
-      try {
-        await ts.channelList();
-        lines.push("OK **list_channels**: accessible");
-      } catch (e) {
-        lines.push(`FAIL **list_channels**: ${e}`);
-      }
-
-      lines.push("");
-      lines.push("**Recommendations if failures exist:**");
-      lines.push("1. Verify your ServerQuery password");
-      lines.push("2. Use an admin token if available");
-      lines.push("3. Create a ServerQuery user with admin permissions");
-      lines.push("4. Ensure port 10011 (ServerQuery) is accessible");
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse({ checks });
     })
   );
 }

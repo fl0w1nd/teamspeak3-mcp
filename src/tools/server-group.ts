@@ -11,12 +11,11 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
     handleToolError("list_server_groups", async () => {
       const ts = await conn.getClient();
       const groups = await ts.serverGroupList();
-
-      const lines = ["**Server Groups:**", ""];
-      for (const g of groups) {
-        lines.push(`- **ID ${g.sgid}**: ${g.name} (Type: ${g.type})`);
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(groups.map((g) => ({
+        group_id: g.sgid,
+        name: g.name,
+        type: g.type,
+      })));
     })
   );
 
@@ -30,7 +29,7 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
     handleToolError("create_server_group", async ({ name, type }) => {
       const ts = await conn.getClient();
       const group = await ts.serverGroupCreate(name, type);
-      return toolResponse(`Server group '${name}' created successfully (ID: ${group.sgid})`);
+      return toolResponse({ group_id: group.sgid, name });
     })
   );
 
@@ -52,25 +51,17 @@ export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConne
       if (action === "add") {
         if (!permission || value === undefined) throw new Error("Permission name and value required for add action");
         await ts.serverGroupAddPerm(gId, { permname: permission, permvalue: value, permskip: skip, permnegated: negate });
-        return toolResponse(`Permission '${permission}' added to server group ${group_id} with value ${value}`);
+        return toolResponse({ status: "ok", group_id, permission, value });
       }
 
       if (action === "remove") {
         if (!permission) throw new Error("Permission name required for remove action");
         await ts.serverGroupDelPerm(gId, permission);
-        return toolResponse(`Permission '${permission}' removed from server group ${group_id}`);
+        return toolResponse({ status: "ok", group_id, permission });
       }
 
-      // list
       const perms = await ts.serverGroupPermList(gId, true);
-      if (perms.length === 0) {
-        return toolResponse(`Server group ${group_id} has no custom permissions.`);
-      }
-      const lines = [`**Server Group ${group_id} Permissions:**`, ""];
-      for (const p of perms) {
-        lines.push(`- **${p.getPerm()}**: ${p.getValue()}`);
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(perms.map((p) => ({ name: p.getPerm(), value: p.getValue() })));
     })
   );
 }

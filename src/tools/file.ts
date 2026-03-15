@@ -15,20 +15,11 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("list_files", async ({ channel_id, path, channel_password }) => {
       const ts = await conn.getClient();
       const files = await ts.ftGetFileList(String(channel_id), path, channel_password);
-
-      if (files.length === 0) {
-        return toolResponse(`No files found in channel ${channel_id} at path '${path}'.`);
-      }
-
-      const lines = [`**Files in Channel ${channel_id} (Path: ${path}):**`, ""];
-      for (const f of files) {
-        const fileType = f.type === 0 ? "Directory" : "File";
-        lines.push(`- **${f.name}** (${fileType})`);
-        if (f.type === 1) {
-          lines.push(`  - Size: ${f.size} bytes`);
-        }
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(files.map((f) => ({
+        name: f.name,
+        type: f.type === 0 ? "directory" : "file",
+        size: f.type === 1 ? f.size : undefined,
+      })));
     })
   );
 
@@ -43,16 +34,12 @@ export function registerFileTools(server: McpServer, conn: TeamSpeakConnection):
     handleToolError("get_file_info", async ({ channel_id, file_path, channel_password }) => {
       const ts = await conn.getClient();
       const info = await ts.ftGetFileInfo(String(channel_id), file_path, channel_password);
-
-      const lines = [
-        `**File Information for '${file_path}':**`,
-        "",
-        `- **Name**: ${info.name}`,
-        `- **Size**: ${info.size} bytes`,
-        `- **Date**: ${info.datetime}`,
-        `- **Channel ID**: ${info.cid}`,
-      ];
-      return toolResponse(lines.join("\n"));
+      return toolResponse({
+        name: info.name,
+        size: info.size,
+        datetime: info.datetime,
+        channel_id: info.cid,
+      });
     })
   );
 }

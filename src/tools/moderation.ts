@@ -11,22 +11,14 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
     handleToolError("list_bans", async () => {
       const ts = await conn.getClient();
       const bans = await ts.banList();
-
-      if (bans.length === 0) {
-        return toolResponse("No active ban rules.");
-      }
-
-      const lines = ["**Active Ban Rules:**", ""];
-      for (const ban of bans) {
-        lines.push(`- **ID ${ban.banid}**`);
-        lines.push(`  - IP: ${ban.ip || "N/A"}`);
-        lines.push(`  - Name: ${ban.name || "N/A"}`);
-        lines.push(`  - UID: ${ban.uid || "N/A"}`);
-        lines.push(`  - Duration: ${ban.duration} seconds`);
-        lines.push(`  - Invoker: ${ban.invokername}`);
-        lines.push("");
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(bans.map((b) => ({
+        ban_id: b.banid,
+        ip: b.ip || null,
+        name: b.name || null,
+        uid: b.uid || null,
+        duration: b.duration,
+        invoker: b.invokername,
+      })));
     })
   );
 
@@ -51,18 +43,17 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
         if (name) props.name = name;
         if (uid) props.uid = uid;
         await ts.ban(props as Parameters<typeof ts.ban>[0]);
-        return toolResponse("Ban rule added successfully");
+        return toolResponse({ status: "ok", action: "add", ip: ip ?? null, name: name ?? null, uid: uid ?? null });
       }
 
       if (action === "delete") {
         if (ban_id === undefined) throw new Error("Ban ID required for delete action");
         await ts.banDel(String(ban_id));
-        return toolResponse(`Ban rule ${ban_id} deleted successfully`);
+        return toolResponse({ status: "ok", action: "delete", ban_id });
       }
 
-      // delete_all
       await ts.banDel();
-      return toolResponse("All ban rules deleted successfully");
+      return toolResponse({ status: "ok", action: "delete_all" });
     })
   );
 
@@ -77,20 +68,12 @@ export function registerModerationTools(server: McpServer, conn: TeamSpeakConnec
       const complaints = await ts.complainList(
         target_client_database_id !== undefined ? String(target_client_database_id) : undefined
       );
-
-      if (complaints.length === 0) {
-        return toolResponse("No complaints found.");
-      }
-
-      const lines = ["**Complaints:**", ""];
-      for (const c of complaints) {
-        lines.push(`- Target: ${c.tname} (DB ID: ${c.tcldbid})`);
-        lines.push(`  - From: ${c.fname} (DB ID: ${c.fcldbid})`);
-        lines.push(`  - Message: ${c.message}`);
-        lines.push(`  - Time: ${c.timestamp}`);
-        lines.push("");
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(complaints.map((c) => ({
+        target: { name: c.tname, database_id: c.tcldbid },
+        from: { name: c.fname, database_id: c.fcldbid },
+        message: c.message,
+        timestamp: c.timestamp,
+      })));
     })
   );
 }

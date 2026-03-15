@@ -12,21 +12,12 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
     handleToolError("list_privilege_tokens", async () => {
       const ts = await conn.getClient();
       const tokens = await ts.privilegeKeyList();
-
-      if (tokens.length === 0) {
-        return toolResponse("No privilege tokens found.");
-      }
-
-      const lines = ["**Privilege Tokens:**", ""];
-      for (const t of tokens) {
-        const tokenPreview = t.token.length > 20 ? t.token.slice(0, 20) + "..." : t.token;
-        const typeName = t.tokenType === 0 ? "Server Group" : "Channel Group";
-        lines.push(`- **Token**: ${tokenPreview}`);
-        lines.push(`  - Type: ${typeName} (ID: ${t.tokenId1})`);
-        lines.push(`  - Description: ${t.tokenDescription || "No description"}`);
-        lines.push("");
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(tokens.map((t) => ({
+        token: t.token,
+        type: t.tokenType === 0 ? "server_group" : "channel_group",
+        group_id: t.tokenId1,
+        description: t.tokenDescription || null,
+      })));
     })
   );
 
@@ -65,7 +56,7 @@ export function registerTokenTools(server: McpServer, conn: TeamSpeakConnection)
         );
       }
 
-      return toolResponse(`Privilege token created successfully\n**Token**: ${result.token}`);
+      return toolResponse({ token: result.token });
     })
   );
 }

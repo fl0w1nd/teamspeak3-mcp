@@ -1,8 +1,8 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
-/** Create a standard text response for an MCP tool. */
-export function toolResponse(text: string): CallToolResult {
-  return { content: [{ type: "text", text }] };
+/** Create a standard JSON response for an MCP tool. */
+export function toolResponse(data: unknown): CallToolResult {
+  return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
 
 /**

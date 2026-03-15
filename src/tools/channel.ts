@@ -18,7 +18,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
         cpid: parent_id !== undefined ? String(parent_id) : undefined,
         channelFlagPermanent: permanent,
       });
-      return toolResponse(`Channel '${name}' created successfully (ID: ${channel.cid})`);
+      return toolResponse({ channel_id: channel.cid, name });
     })
   );
 
@@ -32,7 +32,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
     handleToolError("delete_channel", async ({ channel_id, force }) => {
       const ts = await conn.getClient();
       await ts.channelDelete(String(channel_id), force);
-      return toolResponse(`Channel ${channel_id} deleted successfully`);
+      return toolResponse({ status: "ok", channel_id });
     })
   );
 
@@ -61,8 +61,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
       if (permanent !== undefined) props.channelFlagPermanent = permanent;
 
       await ts.channelEdit(String(channel_id), props);
-      const changed = Object.keys(props).join(", ");
-      return toolResponse(`Channel ${channel_id} updated successfully\nModified: ${changed}`);
+      return toolResponse({ status: "ok", channel_id, modified: Object.keys(props) });
     })
   );
 
@@ -75,23 +74,18 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
     handleToolError("channel_info", async ({ channel_id }) => {
       const ts = await conn.getClient();
       const info = await ts.channelInfo(String(channel_id));
-
-      const lines = [
-        "**Channel Information:**",
-        "",
-        `- **Name**: ${info.channelName}`,
-        `- **Topic**: ${info.channelTopic ?? "N/A"}`,
-        `- **Description**: ${info.channelDescription ?? "N/A"}`,
-        `- **Password Protected**: ${info.channelFlagPassword ? "Yes" : "No"}`,
-        `- **Max Clients**: ${info.channelMaxclients === -1 ? "Unlimited" : info.channelMaxclients}`,
-        `- **Codec**: ${info.channelCodec}`,
-        `- **Codec Quality**: ${info.channelCodecQuality}`,
-        `- **Talk Power Required**: ${info.channelNeededTalkPower}`,
-        `- **Type**: ${info.channelFlagPermanent ? "Permanent" : info.channelFlagSemiPermanent ? "Semi-Permanent" : "Temporary"}`,
-        `- **Order**: ${info.channelOrder}`,
-      ];
-
-      return toolResponse(lines.join("\n"));
+      return toolResponse({
+        name: info.channelName,
+        topic: info.channelTopic ?? null,
+        description: info.channelDescription ?? null,
+        password_protected: !!info.channelFlagPassword,
+        max_clients: info.channelMaxclients === -1 ? null : info.channelMaxclients,
+        codec: info.channelCodec,
+        codec_quality: info.channelCodecQuality,
+        talk_power_required: info.channelNeededTalkPower,
+        type: info.channelFlagPermanent ? "permanent" : info.channelFlagSemiPermanent ? "semi-permanent" : "temporary",
+        order: info.channelOrder,
+      });
     })
   );
 
@@ -113,7 +107,7 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
           throw new Error("Permission name and value required for add action");
         }
         await ts.channelSetPerm(cid, { permname: permission, permvalue: value });
-        return toolResponse(`Permission '${permission}' added to channel ${channel_id} with value ${value}`);
+        return toolResponse({ status: "ok", channel_id, permission, value });
       }
 
       if (action === "remove") {
@@ -121,20 +115,14 @@ export function registerChannelTools(server: McpServer, conn: TeamSpeakConnectio
           throw new Error("Permission name required for remove action");
         }
         await ts.channelDelPerm(cid, permission);
-        return toolResponse(`Permission '${permission}' removed from channel ${channel_id}`);
+        return toolResponse({ status: "ok", channel_id, permission });
       }
 
-      // action === "list"
       const perms = await ts.channelPermList(cid, true);
-      if (perms.length === 0) {
-        return toolResponse(`Channel ${channel_id} has no custom permissions.`);
-      }
-
-      const lines = [`**Channel ${channel_id} Permissions:**`, ""];
-      for (const perm of perms) {
-        lines.push(`- **${perm.getPerm()}**: ${perm.getValue()}`);
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(perms.map((p) => ({
+        name: p.getPerm(),
+        value: p.getValue(),
+      })));
     })
   );
 }

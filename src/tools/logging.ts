@@ -21,16 +21,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
         instance_log ? 1 : 0,
         begin_pos
       );
-
-      if (entries.length === 0) {
-        return toolResponse("No log entries found.");
-      }
-
-      const logLines = [`**Server Logs (${entries.length} entries):**`, ""];
-      for (let i = 0; i < entries.length; i++) {
-        logLines.push(`${i + 1}. ${entries[i].l}`);
-      }
-      return toolResponse(logLines.join("\n"));
+      return toolResponse(entries.map((e) => e.l));
     })
   );
 
@@ -41,13 +32,7 @@ export function registerLoggingTools(server: McpServer, conn: TeamSpeakConnectio
     handleToolError("get_connection_info", async () => {
       const ts = await conn.getClient();
       const info = await ts.connectionInfo();
-
-      const lines = ["**Server Connection Information:**", ""];
-      const entries = Object.entries(info);
-      for (const [key, value] of entries) {
-        lines.push(`- **${key}**: ${value}`);
-      }
-      return toolResponse(lines.join("\n"));
+      return toolResponse(info);
     })
   );
 }
