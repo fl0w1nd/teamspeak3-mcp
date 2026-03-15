@@ -9,7 +9,7 @@ import { createServer } from "./server.js";
 async function main(): Promise<void> {
   const config = parseConfig(process.argv.slice(2));
   const conn = new TeamSpeakConnection(config);
-  const server = createServer(conn);
+  const server = createServer(conn, config.tools);
 
   const shutdown = async () => {
     try {

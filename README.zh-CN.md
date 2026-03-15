@@ -42,11 +42,11 @@
   "mcpServers": {
     "teamspeak": {
       "command": "npx",
-      "args": [
-        "teamspeak3-mcp",
-        "--host", "your-server.com",
-        "--password", "your-password"
-      ]
+      "args": ["teamspeak3-mcp"],
+      "env": {
+        "TEAMSPEAK_HOST": "your-server.com",
+        "TEAMSPEAK_PASSWORD": "your-password"
+      }
     }
   }
 }
@@ -103,6 +103,29 @@
 | 用户名 | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
 | 密码 | `--password` | `TEAMSPEAK_PASSWORD` | *（必填）* |
 | 虚拟服务器 ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
+| 启用的工具 | `--tools` | `TEAMSPEAK_TOOLS` | *（全部）* |
+
+### 按需加载工具
+
+默认注册全部 35 个工具。可通过 `TEAMSPEAK_TOOLS`（或 `--tools`）指定逗号分隔的模块名，仅加载需要的工具 — 适合精简暴露给 AI 模型的工具列表：
+
+```json
+{
+  "mcpServers": {
+    "teamspeak": {
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
+      "env": {
+        "TEAMSPEAK_HOST": "your-server.com",
+        "TEAMSPEAK_PASSWORD": "your-password",
+        "TEAMSPEAK_TOOLS": "server,channel,client"
+      }
+    }
+  }
+}
+```
+
+可用模块：`server`、`channel`、`client`、`sgroup`、`cgroup`、`permission`、`messaging`、`moderation`、`token`、`file`
 
 ## 工具一览
 

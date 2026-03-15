@@ -42,11 +42,11 @@ Add the following to your MCP client configuration. This works with most clients
   "mcpServers": {
     "teamspeak": {
       "command": "npx",
-      "args": [
-        "teamspeak3-mcp",
-        "--host", "your-server.com",
-        "--password", "your-password"
-      ]
+      "args": ["teamspeak3-mcp"],
+      "env": {
+        "TEAMSPEAK_HOST": "your-server.com",
+        "TEAMSPEAK_PASSWORD": "your-password"
+      }
     }
   }
 }
@@ -103,6 +103,29 @@ Configuration is resolved from **CLI arguments** first, then **environment varia
 | Username | `--user` | `TEAMSPEAK_USER` | `serveradmin` |
 | Password | `--password` | `TEAMSPEAK_PASSWORD` | *(required)* |
 | Virtual Server ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
+| Enabled Tools | `--tools` | `TEAMSPEAK_TOOLS` | *(all)* |
+
+### Selective Tool Loading
+
+By default all 35 tools are registered. Use `TEAMSPEAK_TOOLS` (or `--tools`) with a comma-separated list of module names to load only what you need — useful for reducing the tool list exposed to the AI model:
+
+```json
+{
+  "mcpServers": {
+    "teamspeak": {
+      "command": "npx",
+      "args": ["teamspeak3-mcp"],
+      "env": {
+        "TEAMSPEAK_HOST": "your-server.com",
+        "TEAMSPEAK_PASSWORD": "your-password",
+        "TEAMSPEAK_TOOLS": "server,channel,client"
+      }
+    }
+  }
+}
+```
+
+Available modules: `server`, `channel`, `client`, `sgroup`, `cgroup`, `permission`, `messaging`, `moderation`, `token`, `file`
 
 ## Tools Reference
 

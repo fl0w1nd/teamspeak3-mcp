@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { TeamSpeakConnection } from "./connection.js";
+import type { ToolModule } from "./config.js";
 import { registerServerTools } from "./tools/server.js";
 import { registerChannelTools } from "./tools/channel.js";
 import { registerClientTools } from "./tools/client.js";
@@ -11,22 +12,32 @@ import { registerModerationTools } from "./tools/moderation.js";
 import { registerTokenTools } from "./tools/token.js";
 import { registerFileTools } from "./tools/file.js";
 
-export function createServer(conn: TeamSpeakConnection): McpServer {
+type RegisterFn = (server: McpServer, conn: TeamSpeakConnection) => void;
+
+const registry: Record<ToolModule, RegisterFn> = {
+  server: registerServerTools,
+  channel: registerChannelTools,
+  client: registerClientTools,
+  sgroup: registerServerGroupTools,
+  cgroup: registerChannelGroupTools,
+  permission: registerPermissionTools,
+  messaging: registerMessagingTools,
+  moderation: registerModerationTools,
+  token: registerTokenTools,
+  file: registerFileTools,
+};
+
+export function createServer(conn: TeamSpeakConnection, enabledTools: Set<ToolModule>): McpServer {
   const server = new McpServer({
     name: "teamspeak-mcp",
     version: "1.0.0",
   });
 
-  registerServerTools(server, conn);
-  registerChannelTools(server, conn);
-  registerClientTools(server, conn);
-  registerServerGroupTools(server, conn);
-  registerChannelGroupTools(server, conn);
-  registerPermissionTools(server, conn);
-  registerMessagingTools(server, conn);
-  registerModerationTools(server, conn);
-  registerTokenTools(server, conn);
-  registerFileTools(server, conn);
+  for (const [module, register] of Object.entries(registry)) {
+    if (enabledTools.has(module as ToolModule)) {
+      register(server, conn);
+    }
+  }
 
   return server;
 }
