@@ -1,0 +1,98 @@
+import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { TeamSpeakConnection } from "../connection.js";
+
+export function registerServerGroupTools(server: McpServer, conn: TeamSpeakConnection): void {
+  server.tool(
+    "list_server_groups",
+    "List all server groups available on the virtual server",
+    {},
+    async () => {
+      const ts = conn.getClient();
+      const groups = await ts.serverGroupList();
+
+      const lines = ["**Server Groups:**", ""];
+      for (const g of groups) {
+        lines.push(`- **ID ${g.sgid}**: ${g.name} (Type: ${g.type})`);
+      }
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
+
+  server.tool(
+    "create_server_group",
+    "Create a new server group with specified name and type",
+    {
+      name: z.string().describe("Name for the new server group"),
+      type: z.number().default(1).describe("Group type (0=template, 1=regular, 2=query)"),
+    },
+    async ({ name, type }) => {
+      const ts = conn.getClient();
+      const group = await ts.serverGroupCreate(name, type);
+      return { content: [{ type: "text", text: `Server group '${name}' created successfully (ID: ${group.sgid})` }] };
+    }
+  );
+
+  server.tool(
+    "assign_client_to_group",
+    "Add or remove a client from a server group",
+    {
+      client_database_id: z.number().describe("Client database ID"),
+      action: z.enum(["add", "remove"]).describe("Action to perform"),
+      group_id: z.number().describe("Server group ID"),
+    },
+    async ({ client_database_id, action, group_id }) => {
+      const ts = conn.getClient();
+      const dbId = String(client_database_id);
+      const gId = String(group_id);
+
+      if (action === "add") {
+        await ts.serverGroupAddClient(dbId, gId);
+        return { content: [{ type: "text", text: `Client ${client_database_id} added to server group ${group_id}` }] };
+      }
+
+      await ts.serverGroupDelClient(dbId, gId);
+      return { content: [{ type: "text", text: `Client ${client_database_id} removed from server group ${group_id}` }] };
+    }
+  );
+
+  server.tool(
+    "manage_server_group_permissions",
+    "Add, remove or list permissions for a server group",
+    {
+      group_id: z.number().describe("Server group ID"),
+      action: z.enum(["add", "remove", "list"]).describe("Action to perform"),
+      permission: z.string().optional().describe("Permission name (for add/remove)"),
+      value: z.number().optional().describe("Permission value (for add)"),
+      skip: z.boolean().default(false).describe("Skip flag for permission"),
+      negate: z.boolean().default(false).describe("Negate flag for permission"),
+    },
+    async ({ group_id, action, permission, value, skip, negate }) => {
+      const ts = conn.getClient();
+      const gId = String(group_id);
+
+      if (action === "add") {
+        if (!permission || value === undefined) throw new Error("Permission name and value required for add action");
+        await ts.serverGroupAddPerm(gId, { permname: permission, permvalue: value, permskip: skip, permnegated: negate });
+        return { content: [{ type: "text", text: `Permission '${permission}' added to server group ${group_id} with value ${value}` }] };
+      }
+
+      if (action === "remove") {
+        if (!permission) throw new Error("Permission name required for remove action");
+        await ts.serverGroupDelPerm(gId, permission);
+        return { content: [{ type: "text", text: `Permission '${permission}' removed from server group ${group_id}` }] };
+      }
+
+      // list
+      const perms = await ts.serverGroupPermList(gId, true);
+      if (perms.length === 0) {
+        return { content: [{ type: "text", text: `Server group ${group_id} has no custom permissions.` }] };
+      }
+      const lines = [`**Server Group ${group_id} Permissions:**`, ""];
+      for (const p of perms) {
+        lines.push(`- **${p.getPerm()}**: ${p.getValue()}`);
+      }
+      return { content: [{ type: "text", text: lines.join("\n") }] };
+    }
+  );
+}
