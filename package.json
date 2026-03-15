@@ -7,20 +7,36 @@
   "bin": {
     "teamspeak3-mcp": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "rm -rf dist && pnpm build"
   },
   "keywords": [
     "teamspeak",
     "teamspeak3",
     "mcp",
     "model-context-protocol",
-    "serverquery"
+    "serverquery",
+    "ai"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fl0w1nd/teamspeak3-mcp.git"
+  },
+  "homepage": "https://github.com/fl0w1nd/teamspeak3-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/fl0w1nd/teamspeak3-mcp/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
     "ts3-nodejs-library": "^3.5.1",
