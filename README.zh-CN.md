@@ -36,7 +36,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/teamspeak3-mcp.git
+git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
 cd teamspeak3-mcp
 
 # 安装依赖

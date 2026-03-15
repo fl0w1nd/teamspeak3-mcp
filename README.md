@@ -36,7 +36,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/teamspeak3-mcp.git
+git clone https://github.com/fl0w1nd/teamspeak3-mcp.git
 cd teamspeak3-mcp
 
 # Install dependencies
