@@ -149,6 +149,35 @@ export function registerClientTools(server: McpServer, conn: TeamSpeakConnection
   );
 
   server.tool(
+    "client_db_list",
+    "List historical clients from the server database (includes offline clients). Supports pagination for large databases",
+    {
+      start: z.number().default(0).describe("Offset to start from (for pagination)"),
+      limit: z.number().default(25).describe("Max number of entries to return (max 1000)"),
+    },
+    handleToolError("client_db_list", async ({ start, limit }) => {
+      const ts = await conn.getClient();
+      const duration = Math.min(limit, 1000);
+      const entries = await ts.clientDbList(start, duration, true);
+      const data = entries.map((e) => ({
+        database_id: e.cldbid,
+        unique_id: e.clientUniqueIdentifier,
+        nickname: e.clientNickname,
+        created: e.clientCreated,
+        last_connected: e.clientLastconnected,
+        total_connections: e.clientTotalconnections,
+        last_ip: e.clientLastip || null,
+        description: e.clientDescription || null,
+      }));
+      const total = entries.length > 0 ? entries[0].count : 0;
+      return toolResponse(
+        { total, offset: start, returned: data.length, clients: data },
+        data.length === 0 ? "No clients found in the database for the given offset." : undefined,
+      );
+    })
+  );
+
+  server.tool(
     "client_poke",
     "Send a poke (alert popup) to a client — more attention-grabbing than a private message",
     {

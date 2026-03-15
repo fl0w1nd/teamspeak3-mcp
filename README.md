@@ -20,7 +20,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 ## Features
 
-- **34 purpose-built tools** covering server management, channels, clients, groups, permissions, moderation, and more
+- **35 purpose-built tools** covering server management, channels, clients, groups, permissions, moderation, and more
 - **Lazy connection** — connects to TeamSpeak only when the first tool is invoked
 - **Exponential backoff retry** — automatic reconnection with up to 3 attempts
 - **Graceful shutdown** — cleans up the ServerQuery session on process exit
@@ -134,6 +134,7 @@ Configuration is resolved from **CLI arguments** first, then **environment varia
 | `client_kick` | Kick a client from the server or channel |
 | `client_ban` | Ban a client (timed or permanent) |
 | `client_perm` | Manage server group membership and individual permissions |
+| `client_db_list` | List historical clients from the server database (includes offline clients) |
 | `client_poke` | Send a poke alert notification to a client |
 
 ### Server Group (`sgroup_*`)
