@@ -3,6 +3,7 @@ import type { TeamSpeakConnection } from "./connection.js";
 import { registerCoreTools } from "./tools/core.js";
 import { registerMessagingTools } from "./tools/messaging.js";
 import { registerChannelTools } from "./tools/channel.js";
+import { registerClientTools } from "./tools/client.js";
 
 export function createServer(conn: TeamSpeakConnection): McpServer {
   const server = new McpServer({
@@ -13,6 +14,7 @@ export function createServer(conn: TeamSpeakConnection): McpServer {
   registerCoreTools(server, conn);
   registerMessagingTools(server, conn);
   registerChannelTools(server, conn);
+  registerClientTools(server, conn);
 
   return server;
 }
