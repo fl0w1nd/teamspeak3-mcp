@@ -105,6 +105,8 @@
 | 虚拟服务器 ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
 | 启用的工具 | `--tools` | `TEAMSPEAK_TOOLS` | *（全部）* |
 
+> **注意：** `TEAMSPEAK_PASSWORD` 是 **ServerQuery 查询登录密码**，而非 TeamSpeak 服务器的连接密码。可在服务端首次启动时的控制台输出中找到，或通过 TeamSpeak 客户端的 **工具 → ServerQuery 登录** 创建。
+
 ### 按需加载工具
 
 默认注册全部 35 个工具。可通过 `TEAMSPEAK_TOOLS`（或 `--tools`）指定逗号分隔的模块名，仅加载需要的工具 — 适合精简暴露给 AI 模型的工具列表：

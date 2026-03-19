@@ -106,6 +106,8 @@ Configuration is resolved from **CLI arguments** first, then **environment varia
 | Virtual Server ID | `--server-id` | `TEAMSPEAK_SERVER_ID` | `1` |
 | Enabled Tools | `--tools` | `TEAMSPEAK_TOOLS` | *(all)* |
 
+> **Note:** `TEAMSPEAK_PASSWORD` refers to the **ServerQuery login password**, not the TeamSpeak server connection password. You can find it in the server console output on first start, or create one via **Tools → ServerQuery Login** in the TeamSpeak client.
+
 ### Selective Tool Loading
 
 By default all 35 tools are registered. Use `TEAMSPEAK_TOOLS` (or `--tools`) with a comma-separated list of module names to load only what you need — useful for reducing the tool list exposed to the AI model:
